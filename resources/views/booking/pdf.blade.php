@@ -40,6 +40,12 @@
             text-align: right;
             font-style: italic;
         }
+        /* Tambahan style untuk gambar KTP */
+        .ktp-image {
+            max-width: 200px;
+            height: auto;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -61,6 +67,22 @@
             <th>Nomor Identitas (KTP)</th>
             <td>{{ $booking->identity_card }}</td>
         </tr>
+        
+        {{-- TAMBAHAN: Foto KTP --}}
+        @if($booking->identity_card)
+        <tr>
+    <th>Foto KTP</th>
+    <td>
+        @if($booking->identity_card)
+            <img src="{{ public_path('storage/ktp/' . $booking->identity_card) }}" alt="Foto KTP" style="max-width: 200px;">
+        @else
+            No Image
+        @endif
+    </td>
+</tr>
+        @endif
+        {{-- ---------------- --}}
+
         <tr>
             <th>Kendaraan</th>
             <td>{{ $booking->vehicle->name }} ({{ $booking->vehicle->plate_number }})</td>

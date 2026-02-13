@@ -78,7 +78,14 @@ return [
          * direct class use like:
          * $dompdf = new DOMPDF();  $dompdf->load_html($htmldata); $dompdf->render(); $pdfdata = $dompdf->output();
          */
-        'chroot' => realpath(base_path()),
+        
+        // --- PERBAIKAN: Menambahkan akses ke folder public dan storage ---
+        'chroot' => [
+            base_path(), // Akses folder dasar aplikasi
+            public_path(), // Akses folder public untuk gambar
+            storage_path(), // Akses folder storage
+        ],
+        // -----------------------------------------------------------------
 
         /**
          * Protocol whitelist
@@ -146,7 +153,7 @@ return [
          * html target media view which should be rendered into pdf.
          * List of types and parsing rules for future extensions:
          * http://www.w3.org/TR/REC-html40/types.html
-         *   screen, tty, tv, projection, handheld, print, braille, aural, all
+         * screen, tty, tv, projection, handheld, print, braille, aural, all
          * Note: aural is deprecated in CSS 2.1 because it is replaced by speech in CSS 3.
          * Note, even though the generated pdf file is intended for print output,
          * the desired content might be different (e.g. screen or projection view of html file).
@@ -202,10 +209,10 @@ return [
          *
          * Rendering resolution of various browsers in px per inch:
          * Windows Firefox and Internet Explorer:
-         *   SystemControl->Display properties->FontResolution: Default:96, largefonts:120, custom:?
+         * SystemControl->Display properties->FontResolution: Default:96, largefonts:120, custom:?
          * Linux Firefox:
-         *   about:config *resolution: Default:96
-         *   (xorg screen dimension in mm and Desktop font dpi settings are ignored)
+         * about:config *resolution: Default:96
+         * (xorg screen dimension in mm and Desktop font dpi settings are ignored)
          *
          * Take care about extra font/image zoom factor of browser.
          *
@@ -250,20 +257,20 @@ return [
         /**
          * Enable remote file access
          *
-         *  If this setting is set to true, DOMPDF will access remote sites for
-         *  images and CSS files as required.
+         * If this setting is set to true, DOMPDF will access remote sites for
+         * images and CSS files as required.
          *
-         *  ==== IMPORTANT ====
-         *  This can be a security risk, in particular in combination with isPhpEnabled and
-         *  allowing remote html code to be passed to $dompdf = new DOMPDF(); $dompdf->load_html(...);
-         *  This allows anonymous users to download legally doubtful internet content which on
-         *  tracing back appears to being downloaded by your server, or allows malicious php code
-         *  in remote html pages to be executed by your server with your account privileges.
+         * ==== IMPORTANT ====
+         * This can be a security risk, in particular in combination with isPhpEnabled and
+         * allowing remote html code to be passed to $dompdf = new DOMPDF(); $dompdf->load_html(...);
+         * This allows anonymous users to download legally doubtful internet content which on
+         * tracing back appears to being downloaded by your server, or allows malicious php code
+         * in remote html pages to be executed by your server with your account privileges.
          *
-         *  This setting may increase the risk of system exploit. Do not change
-         *  this settings without understanding the consequences. Additional
-         *  documentation is available on the dompdf wiki at:
-         *  https://github.com/dompdf/dompdf/wiki
+         * This setting may increase the risk of system exploit. Do not change
+         * this settings without understanding the consequences. Additional
+         * documentation is available on the dompdf wiki at:
+         * https://github.com/dompdf/dompdf/wiki
          *
          * @var bool
          */

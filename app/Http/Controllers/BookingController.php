@@ -30,44 +30,54 @@ class BookingController extends Controller
         return view('booking.create', compact('vehicle'));
     }
 
-    public function store(Request $request)
-    {
-        // Validasi Input
-        $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'customer_name' => 'required|string|max:255',
-            'identity_card' => 'required|string|max:50',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+   public function store(Request $request)
+{
+    // Validasi Input
+    $request->validate([
+        'vehicle_id' => 'required|exists:vehicles,id',
+        'customer_name' => 'required|string|max:255',
+        'identity_card' => 'required|image|mimes:jpeg,png,jpg|max:2048', 
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ]);
 
-        $vehicle = Vehicle::findOrFail($request->vehicle_id);
+    $vehicle = Vehicle::findOrFail($request->vehicle_id);
 
-        // Logika Hitung Biaya
-        $days = Carbon::parse($request->start_date)
-            ->diffInDays(Carbon::parse($request->end_date)) + 1;
-
-        $totalCost = $days * $vehicle->price_per_day;
-
-        // Simpan data
-        Booking::create([
-            'vehicle_id'     => $vehicle->id,
-            'customer_name'  => $request->customer_name,
-            'identity_card'  => $request->identity_card,
-            'start_date'     => $request->start_date,
-            'end_date'       => $request->end_date,
-            'total_cost'     => $totalCost,
-            'payment_status' => 'pending'
-        ]);
-
-        // Update Status Kendaraan
-        $vehicle->update([
-            'status' => 'rented'
-        ]);
-
-        return redirect()->route('booking.index')
-                         ->with('success', 'Booking berhasil! ' . $vehicle->name . ' telah dipesan.');
+    // --- LOGIKA UPLOAD FILE YANG DIPERBAIKI ---
+    $fileName = null; // Default null jika tidak ada file
+    if ($request->hasFile('identity_card')) {
+        $file = $request->file('identity_card');
+        // Simpan ke storage/app/public/ktp
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $file->storeAs('public/ktp', $fileName);
     }
+    // ------------------------------------------
+
+    // Logika Hitung Biaya
+    $days = Carbon::parse($request->start_date)
+        ->diffInDays(Carbon::parse($request->end_date)) + 1;
+
+    $totalCost = $days * $vehicle->price_per_day;
+
+    // Simpan data
+    Booking::create([
+        'vehicle_id'     => $vehicle->id,
+        'customer_name'  => $request->customer_name,
+        'identity_card'  => $fileName, // Simpan NAMA FILE
+        'start_date'     => $request->start_date,
+        'end_date'       => $request->end_date,
+        'total_cost'     => $totalCost,
+        'payment_status' => 'pending'
+    ]);
+
+    // Update Status Kendaraan
+    $vehicle->update([
+        'status' => 'rented'
+    ]);
+
+    return redirect()->route('booking.index')
+                     ->with('success', 'Booking berhasil! ' . $vehicle->name . ' telah dipesan.');
+}
 
     // --- PERBAIKAN: Relasi 'pelanggan' dihapus ---
     public function downloadPdf($id)

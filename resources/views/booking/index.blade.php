@@ -102,7 +102,7 @@
                                                                             ->first();
                                         @endphp
                                         @if($activeBooking)
-                                            <a href="{{ route('booking.pdf', $activeBooking->id) }}" class="btn btn-sm btn-danger">PDF</a>
+                                            <a href="{{ route('booking.pdf', $activeBooking->id) }}" class="btn btn-sm btn-danger">Download PDF</a>
                                         @endif
                                     @endif
                                 </div>

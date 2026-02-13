@@ -13,8 +13,22 @@
                 <h2>Booking Vehicle: {{ $vehicle->name }}</h2>
             </div>
             <div class="card-body">
+                
+                {{-- TAMPILKAN ERROR VALIDASI DI SINI --}}
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                {{-- ------------------------------ --}}
+
                 {{-- Form action mengarah ke rute named 'bookings.store' --}}
-                <form action="{{ route('bookings.store') }}" method="POST">
+                {{-- PERBAIKAN: Tambahkan enctype di sini --}}
+                <form action="{{ route('bookings.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
                     {{-- Input Hidden untuk ID Kendaraan --}}
@@ -25,9 +39,10 @@
                         <input type="text" name="customer_name" class="form-control" required>
                     </div>
 
+                    {{-- PERBAIKAN: Gunakan 'identity_card' sesuai validasi di Controller --}}
                     <div class="form-group">
-                        <label>Identity Card</label>
-                        <input type="text" name="identity_card" class="form-control" required>
+                        <label>Upload Foto KTP</label>
+                        <input type="file" name="identity_card" class="form-control" accept="image/*" required>
                     </div>
 
                     <div class="form-group">
