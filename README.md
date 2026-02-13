@@ -1,2 +1,0 @@
-# rental_motor
-web
