@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Pengembalian</title>
+    <title>Return Data</title>
 
     <style>
         body {
@@ -119,11 +119,11 @@
 <body>
 
 <div class="page-card">
-    <h2>Data Pengembalian Kendaraan</h2>
+    <h2>Vehicle Return Data</h2>
 
     <div class="search-form">
         <a href="{{ url('/booking') }}" class="btn-back">
-            ← Kembali ke Dashboard
+            ← Back to Dashboard
         </a>
     </div>
     
@@ -137,10 +137,10 @@
         <thead>
             <tr>
                 <th>Booking ID</th>
-                <th>Tanggal Kembali</th>
-                <th>Terlambat (Hari)</th>
-                <th>Denda</th>
-                <th>Kondisi</th>
+                <th>Return Date</th>
+                <th>Late (Days)</th>
+                <th>Penalty</th>
+                <th>Condition</th>
             </tr>
         </thead>
         <tbody>
@@ -151,8 +151,9 @@
                     <td>{{ $return->late_days }}</td>
                     <td>Rp {{ number_format($return->penalty, 0, ',', '.') }}</td>
                     <td>
-                        @if(strtolower($return->vehicle_condition) == 'baik')
-                            <span class="badge badge-good">Baik</span>
+                        {{-- Logika badge kondisi disesuaikan ke bahasa Inggris --}}
+                        @if(strtolower($return->vehicle_condition) == 'baik' || strtolower($return->vehicle_condition) == 'good')
+                            <span class="badge badge-good">Good</span>
                         @else
                             <span class="badge badge-damage">{{ $return->vehicle_condition }}</span>
                         @endif
@@ -161,7 +162,7 @@
             @empty
                 <tr>
                     <td colspan="5">
-                        Belum ada data pengembalian.
+                        No return data available yet.
                     </td>
                 </tr>
             @endforelse

@@ -28,7 +28,7 @@ class BookingController extends Controller
             return back()->with('error', 'Vehicle Not Available');
         }
 
-        session()->flash('success', 'Silakan isi form berikut untuk menyewa ' . $vehicle->name);
+        
 
         return view('booking.create', compact('vehicle'));
     }
@@ -78,7 +78,7 @@ class BookingController extends Controller
         $vehicle->update(['status' => 'rented']);
 
         return redirect()->route('booking.index')
-            ->with('success', 'Booking berhasil! ' . $vehicle->name . ' telah dipesan.');
+            ->with('success', 'Booking successful! ' . $vehicle->name . ' has been booked.');
     }
 
     // Mengunduh laporan booking dalam bentuk PDF

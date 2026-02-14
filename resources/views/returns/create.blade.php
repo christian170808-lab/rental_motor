@@ -16,20 +16,20 @@
         
         <input type="hidden" name="booking_id" value="{{ $booking->id }}">
 
-        <p>Nama Customer: {{ $booking->customer_name }}</p>
-        <p>Plat Nomor: {{ $vehicle->plate_number }}</p>
-        <p>Tanggal Sewa: {{ $booking->start_date }}</p>
-        <p>Tanggal Kembali (Seharusnya): {{ $booking->end_date }}</p>
+        <p>Customer Name: {{ $booking->customer_name }}</p>
+        <p>Plate Number: {{ $vehicle->plate_number }}</p>
+        <p>Rental Date: {{ $booking->start_date }}</p>
+        <p>Return Date (Expected): {{ $booking->end_date }}</p>
 
-        <label>Kondisi Kendaraan</label><br>
+        <label>Vehicle Condition</label><br>
         <select name="vehicle_condition" required>
-            <option value="Baik">Baik</option>
-            <option value="Rusak Ringan">Rusak Ringan</option>
-            <option value="Rusak Berat">Rusak Berat</option>
+            <option value="Good">Good</option>
+            <option value="Minor Damage">Minor Damage</option>
+            <option value="Major Damage">Major Damage</option>
         </select>
         <br><br>
 
-        <button type="submit">Proses Pengembalian</button>
+        <button type="submit">Process Return</button>
     </form>
 
 </body>

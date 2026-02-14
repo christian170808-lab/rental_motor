@@ -47,9 +47,9 @@
 
 @if(session('success'))
     <div class="notif-box">
-        <div class="notif-title">✅ Berhasil</div>
+        <div class="notif-title">✅ Success</div>
         <div>{{ session('success') }}</div>
-        <p class="notif-text">Mengarahkan ke halaman booking dalam 3 detik...</p>
+        <p class="notif-text">Redirecting to the booking page in 3 seconds...</p>
     </div>
 
     <script>

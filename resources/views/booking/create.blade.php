@@ -9,9 +9,10 @@
 <body>
     <div class="container mt-5">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h2>Booking Vehicle: {{ $vehicle->name }}</h2>
-            </div>
+                <a href="{{ url('/booking') }}" class="btn btn-secondary">Back to Home</a>
+                </div>
             <div class="card-body">
                 
                 @if ($errors->any())
@@ -30,14 +31,14 @@
                     <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
 
                     <div class="form-group">
-                        <label>Nama Pelanggan</label>
+                        <label>Customer Name</label>
                         <input type="text" name="customer_name" class="form-control" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Upload Foto KTP</label>
+                        <label>Upload ID Card Photo</label>
                         <input type="file" name="identity_card" class="form-control" accept="image/*" required>
-                        <small class="text-muted">Foto KTP digunakan untuk data sewa.</small>
+                        <small class="text-muted">The ID card photo is used for rental data.</small>
                     </div>
 
                     <div class="form-group">

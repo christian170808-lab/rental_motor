@@ -27,7 +27,7 @@ class AuthController extends Controller
             // Regenerasi sesi untuk mencegah serangan session fixation
             $request->session()->regenerate();
             
-            return redirect()->route('dashboard')->with('success', 'Selamat datang! Anda berhasil login.');
+            return redirect()->route('dashboard')->with('success', 'Welcome! You have successfully logged in.');
         }
 
         // Jika login gagal, kembalikan ke halaman sebelumnya dengan pesan error
