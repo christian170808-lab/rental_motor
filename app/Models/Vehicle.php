@@ -8,13 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Vehicle extends Model
 {
+    // Menggunakan factory untuk pembuatan data dummy
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    // Mengizinkan mass assignment untuk field tertentu
     protected $fillable = [
         'name',
         'image',
@@ -23,11 +20,7 @@ class Vehicle extends Model
         'status'
     ];
 
-    /**
-     * Relasi One-to-Many: Satu kendaraan memiliki banyak booking.
-     *
-     * @return HasMany
-     */
+    // Relasi: Satu kendaraan dapat memiliki banyak data booking
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);

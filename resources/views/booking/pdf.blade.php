@@ -4,44 +4,43 @@
     <meta charset="UTF-8">
     <title>Laporan Booking - {{ $booking->id }}</title>
     <style>
-        body {
+        body {                
             font-family: Arial, sans-serif;
             font-size: 14px;
             color: #333;
         }
-        .header {
+        .header {                
             text-align: center;
             margin-bottom: 20px;
         }
-        .header h2 {
+        .header h2 {                
             margin: 0;
             padding: 0;
         }
-        .table-data {
+        .table-data {                
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-        .table-data th, .table-data td {
+        .table-data th, .table-data td {                
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
-        .table-data th {
+        .table-data th {                
             background-color: #f2f2f2;
             width: 30%;
         }
-        .total-row {
+        .total-row {                
             font-weight: bold;
             background-color: #f9f9f9;
         }
-        .footer {
+        .footer {                
             margin-top: 30px;
             text-align: right;
             font-style: italic;
         }
-        /* Tambahan style untuk gambar KTP */
-        .ktp-image {
+        .ktp-image {                
             max-width: 200px;
             height: auto;
             margin-top: 5px;
@@ -63,12 +62,7 @@
             <th>Nama Pelanggan</th>
             <td>{{ $booking->customer_name }}</td>
         </tr>
-        <tr>
-            <th>Nomor Identitas (KTP / NIK)</th>
-            <td>{{ $booking->identity_number ?? '–' }}</td>
-        </tr>
         
-        {{-- Foto KTP (pakai Base64 agar tampil di PDF DomPDF) --}}
         @if($booking->identity_card)
         <tr>
             <th>Foto KTP</th>
@@ -81,7 +75,6 @@
             </td>
         </tr>
         @endif
-        {{-- ---------------- --}}
 
         <tr>
             <th>Kendaraan</th>

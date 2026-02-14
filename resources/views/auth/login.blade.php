@@ -78,28 +78,22 @@
             margin-bottom: 15px;
         }
     </style>
-
 </head>
-
 <body>
 
 <div class="card">
-
     <h2>Login</h2>
 
-    {{-- Pesan Sukses --}}
     @if(session('success'))
         <p class="msg-success">{{ session('success') }}</p>
     @endif
 
-    {{-- Pesan Error --}}
     @if($errors->any())
         <p class="msg-error">{{ $errors->first() }}</p>
     @endif
 
     <form method="POST" action="{{ route('login.process') }}">
         @csrf
-
         <label>Email</label>
         <input type="email" name="email" value="{{ old('email') }}" required>
 
@@ -108,7 +102,6 @@
 
         <button type="submit">Login</button>
     </form>
-
 </div>
 
 </body>

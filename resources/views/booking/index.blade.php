@@ -36,14 +36,14 @@
             </div>
         </div>
 
-        {{-- Success Notification --}}
+        {{-- Notifikasi Sukses --}}
         @if(session('success'))
             <div class="alert alert-success">
                 {{ session('success') }}
             </div>
         @endif
 
-        {{-- Error Notification --}}
+        {{-- Notifikasi Error --}}
         @if(session('error'))
             <div class="alert alert-danger">
                 {{ session('error') }}
@@ -96,10 +96,11 @@
 
                                     @if($v->status == 'rented')
                                         @php
+                                            // Mengambil data booking terakhir untuk kendaraan yang sedang disewa
                                             $activeBooking = \App\Models\Booking::where('vehicle_id', $v->id)
-                                                                            ->where('payment_status', 'pending') 
-                                                                            ->latest()
-                                                                            ->first();
+                                                                                ->where('payment_status', 'pending') 
+                                                                                ->latest()
+                                                                                ->first();
                                         @endphp
                                         @if($activeBooking)
                                             <a href="{{ route('booking.pdf', $activeBooking->id) }}" class="btn btn-sm btn-danger">Download PDF</a>
@@ -117,29 +118,33 @@
 
     <script>
         $(document).ready(function(){
-            // Initialize Select2 on dropdown
+            // Menginisialisasi plugin Select2 pada dropdown tipe kendaraan
             $('#typeFilter').select2({
                 theme: "bootstrap",
                 placeholder: "Search or select type...",
                 allowClear: true
             });
 
-            // Table Filter Function
+            // Fungsi untuk memfilter tabel berdasarkan input teks dan dropdown tipe
             function filterTable() {
                 var searchText = $('#searchInput').val().toLowerCase();
                 var typeFilter = $('#typeFilter').val();
                 var found = false;
 
+                // Melakukan iterasi pada setiap baris data di dalam tabel
                 $("#vehicleTable tbody tr").each(function() {
                     var row = $(this);
+                    // Mengambil data dari kolom nama dan plat nomor untuk pencarian teks
                     var name = row.find("td:eq(1)").text().toLowerCase();
                     var plate = row.find("td:eq(3)").text().toLowerCase();
-                    var type = row.find(".vehicle-type").text(); // Get text from badge
+                    // Mengambil tipe kendaraan dari badge
+                    var type = row.find(".vehicle-type").text(); 
 
-                    // Filter Logic
+                    // Logika Filter: mencocokkan teks dan tipe kendaraan
                     var matchText = name.indexOf(searchText) > -1 || plate.indexOf(searchText) > -1;
                     var matchType = typeFilter === "" || type === typeFilter;
 
+                    // Menampilkan atau menyembunyikan baris berdasarkan hasil filter
                     if (matchText && matchType) {
                         row.show();
                         found = true;
@@ -148,7 +153,7 @@
                     }
                 });
 
-                // Show message if no rows match
+                // Menampilkan pesan jika tidak ada baris yang cocok dengan pencarian
                 if (found) {
                     $('#noDataMessage').addClass('d-none');
                 } else {
@@ -156,8 +161,9 @@
                 }
             }
 
-            // Event listeners
+            // Event listener untuk menjalankan fungsi filter saat input teks berubah
             $('#searchInput').on('keyup', filterTable);
+            // Event listener untuk menjalankan fungsi filter saat dropdown tipe berubah
             $('#typeFilter').on('change', filterTable);
         });
     </script>

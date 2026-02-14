@@ -30,7 +30,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Alert sukses */
         .alert {
             background: #dcfce7;
             color: #166534;
@@ -41,7 +40,6 @@
             border-left: 6px solid #22c55e;
         }
 
-        /* Toolbar */
         .search-form {
             margin-bottom: 20px;
         }
@@ -60,7 +58,6 @@
             background: #4b5563;
         }
 
-        /* Table */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -96,7 +93,6 @@
             background: #fafafa;
         }
 
-        /* Kondisi badge */
         .badge {
             padding: 6px 10px;
             border-radius: 20px;
@@ -114,31 +110,28 @@
             color: #991b1b;
         }
 
-        /* Animasi */
         @keyframes fadeIn {
             from {opacity: 0; transform: translateY(10px);}
             to {opacity: 1; transform: translateY(0);}
         }
     </style>
 </head>
-
 <body>
 
 <div class="page-card">
-
     <h2>Data Pengembalian Kendaraan</h2>
-
-    @if(session('success'))
-        <div class="alert">
-            {{ session('success') }}
-        </div>
-    @endif
 
     <div class="search-form">
         <a href="{{ url('/booking') }}" class="btn-back">
             ← Kembali ke Dashboard
         </a>
     </div>
+    
+    @if(session('success'))
+        <div class="alert">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <table>
         <thead>
@@ -168,13 +161,12 @@
             @empty
                 <tr>
                     <td colspan="5">
-                        Belum ada data atau hasil pencarian tidak ditemukan.
+                        Belum ada data pengembalian.
                     </td>
                 </tr>
             @endforelse
         </tbody>
     </table>
-
 </div>
 
 </body>

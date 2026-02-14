@@ -97,9 +97,9 @@
                                     @if($v->status == 'rented')
                                         @php
                                             $activeBooking = \App\Models\Booking::where('vehicle_id', $v->id)
-                                                                            ->where('payment_status', 'pending') 
-                                                                            ->latest()
-                                                                            ->first();
+                                                                                ->where('payment_status', 'pending') 
+                                                                                ->latest()
+                                                                                ->first();
                                         @endphp
                                         @if($activeBooking)
                                             <a href="{{ route('booking.pdf', $activeBooking->id) }}" class="btn btn-sm btn-danger">PDF</a>

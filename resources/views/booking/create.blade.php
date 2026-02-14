@@ -14,7 +14,6 @@
             </div>
             <div class="card-body">
                 
-                {{-- TAMPILKAN ERROR VALIDASI DI SINI --}}
                 @if ($errors->any())
                     <div class="alert alert-danger">
                         <ul>
@@ -24,14 +23,10 @@
                         </ul>
                     </div>
                 @endif
-                {{-- ------------------------------ --}}
 
-                {{-- Form action mengarah ke rute named 'bookings.store' --}}
-                {{-- PERBAIKAN: Tambahkan enctype di sini --}}
                 <form action="{{ route('bookings.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
-                    {{-- Input Hidden untuk ID Kendaraan --}}
                     <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
 
                     <div class="form-group">
@@ -42,7 +37,7 @@
                     <div class="form-group">
                         <label>Upload Foto KTP</label>
                         <input type="file" name="identity_card" class="form-control" accept="image/*" required>
-                        <small class="text-muted">Nomor KTP (NIK) akan terbaca otomatis dari foto dan muncul di PDF.</small>
+                        <small class="text-muted">Foto KTP digunakan untuk data sewa.</small>
                     </div>
 
                     <div class="form-group">

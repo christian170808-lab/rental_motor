@@ -45,20 +45,16 @@
     }
 </style>
 
-
-{{-- Cek Apakah Ada Pesan Sukses di Session --}}
 @if(session('success'))
     <div class="notif-box">
         <div class="notif-title">✅ Berhasil</div>
         <div>{{ session('success') }}</div>
         <p class="notif-text">Mengarahkan ke halaman booking dalam 3 detik...</p>
     </div>
+
+    <script>
+        setTimeout(function(){
+            window.location.href = "{{ route('booking.index') }}";
+        }, 3000);
+    </script>
 @endif
-
-
-{{-- Script Redirect Otomatis --}}
-<script>
-    setTimeout(function(){
-        window.location.href = "{{ route('booking.index') }}";
-    }, 3000);
-</script>

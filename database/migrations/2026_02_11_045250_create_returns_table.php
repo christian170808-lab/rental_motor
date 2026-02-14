@@ -6,24 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up()
-{
-    Schema::create('returns', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('booking_id')->constrained('bookings'); // Terhubung ke bookings
-        $table->date('return_date');
-        $table->integer('fine')->default(0); // Denda jika ada
-        $table->text('notes')->nullable();
-        $table->timestamps();
-    });
-}
+    // Menjalankan migrasi untuk membuat tabel 'returns'
+    public function up(): void
+    {
+        Schema::create('returns', function (Blueprint $table) {
+            $table->id(); // Primary key auto-increment
+            // Foreign key menghubungkan ke tabel 'bookings'
+            $table->foreignId('booking_id')->constrained('bookings');
+            $table->date('return_date'); // Tanggal pengembalian kendaraan
+            $table->integer('fine')->default(0); // Denda (jika ada keterlambatan/kerusakan)
+            $table->text('notes')->nullable(); // Catatan tambahan mengenai kondisi kendaraan
+            $table->timestamps(); // Kolom created_at dan updated_at
+        });
+    }
 
-    /**
-     * Reverse the migrations.
-     */
+    // Membatalkan migrasi untuk menghapus tabel 'returns'
     public function down(): void
     {
         Schema::dropIfExists('returns');

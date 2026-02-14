@@ -6,24 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up()
-{
-    Schema::create('vehicles', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');         // Ini penting
-        $table->string('plate_number'); // Ini penting
-        $table->string('status');       // Ini penting
-        $table->string('image')->nullable(); // Ini penting
-        $table->timestamps();
-    });
-}
+    // Menjalankan migrasi untuk membuat tabel 'vehicles'
+    public function up(): void
+    {
+        Schema::create('vehicles', function (Blueprint $table) {
+            $table->id(); // Primary key auto-increment
+            $table->string('name'); // Nama kendaraan
+            $table->string('plate_number'); // Nomor plat kendaraan
+            $table->string('status'); // Status kendaraan (misal: 'available', 'rented')
+            $table->string('image')->nullable(); // Path file gambar kendaraan (opsional)
+            $table->timestamps(); // Kolom created_at dan updated_at
+        });
+    }
 
-    /**
-     * Reverse the migrations.
-     */
+    // Membatalkan migrasi untuk menghapus tabel 'vehicles'
     public function down(): void
     {
         Schema::dropIfExists('vehicles');
