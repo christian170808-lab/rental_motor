@@ -64,22 +64,22 @@
             <td>{{ $booking->customer_name }}</td>
         </tr>
         <tr>
-            <th>Nomor Identitas (KTP)</th>
-            <td>{{ $booking->identity_card }}</td>
+            <th>Nomor Identitas (KTP / NIK)</th>
+            <td>{{ $booking->identity_number ?? '–' }}</td>
         </tr>
         
-        {{-- TAMBAHAN: Foto KTP --}}
+        {{-- Foto KTP (pakai Base64 agar tampil di PDF DomPDF) --}}
         @if($booking->identity_card)
         <tr>
-    <th>Foto KTP</th>
-    <td>
-        @if($booking->identity_card)
-            <img src="{{ public_path('storage/ktp/' . $booking->identity_card) }}" alt="Foto KTP" style="max-width: 200px;">
-        @else
-            No Image
-        @endif
-    </td>
-</tr>
+            <th>Foto KTP</th>
+            <td>
+                @if(!empty($ktpDataUri))
+                    <img src="{{ $ktpDataUri }}" alt="Foto KTP" class="ktp-image">
+                @else
+                    No Image
+                @endif
+            </td>
+        </tr>
         @endif
         {{-- ---------------- --}}
 

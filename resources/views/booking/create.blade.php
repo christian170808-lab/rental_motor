@@ -35,14 +35,14 @@
                     <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
 
                     <div class="form-group">
-                        <label>Customer Name</label>
+                        <label>Nama Pelanggan</label>
                         <input type="text" name="customer_name" class="form-control" required>
                     </div>
 
-                    {{-- PERBAIKAN: Gunakan 'identity_card' sesuai validasi di Controller --}}
                     <div class="form-group">
                         <label>Upload Foto KTP</label>
                         <input type="file" name="identity_card" class="form-control" accept="image/*" required>
+                        <small class="text-muted">Nomor KTP (NIK) akan terbaca otomatis dari foto dan muncul di PDF.</small>
                     </div>
 
                     <div class="form-group">

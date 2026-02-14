@@ -10,7 +10,8 @@ class Booking extends Model
     protected $fillable = [
         'vehicle_id',
         'customer_name',
-        'identity_card',
+        'identity_number', // Nomor KTP (NIK) 16 digit
+        'identity_card',   // Nama file foto KTP
         'start_date',
         'end_date',
         'total_cost',
