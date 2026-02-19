@@ -4,124 +4,129 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Vehicle;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB; 
 
 class BookingController extends Controller
 {
-    // Menampilkan daftar kendaraan untuk dipilih
-    public function index()
+    public function index(Request $request)
     {
-        $vehicles = Vehicle::all();
+        $query = Vehicle::with('bookings');
+
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('plate_number', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $vehicles = $query->get(); 
+
         return view('booking.index', compact('vehicles'));
     }
 
-    // Menampilkan form booking untuk kendaraan tertentu
     public function create($vehicle_id)
     {
         $vehicle = Vehicle::findOrFail($vehicle_id);
 
-        // Validasi jika kendaraan sedang disewa
         if ($vehicle->status == 'rented') {
             return back()->with('error', 'Vehicle Not Available');
         }
 
-        
-
         return view('booking.create', compact('vehicle'));
     }
 
-    // Memproses penyimpanan data booking baru
     public function store(Request $request)
     {
-        // Validasi input form booking
         $request->validate([
-            'vehicle_id'    => 'required|exists:vehicles,id',
-            'customer_name' => 'required|string|max:255',
-            'identity_card' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Upload foto KTP
-            'start_date'    => 'required|date',
-            'end_date'      => 'required|date|after_or_equal:start_date',
+            'vehicle_id'    => ['required', 'exists:vehicles,id'],
+            'customer_id'   => ['required', 'exists:customers,id'],
+            'identity_card' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'payment_proof' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'start_date'    => ['required', 'date'],
+            'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
         ]);
 
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
-        $fileName = null;
 
-        // Proses unggah file foto KTP
+        $ktpName = null;
         if ($request->hasFile('identity_card')) {
             $file = $request->file('identity_card');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('ktp', $fileName, 'public');
+            $ktpName = time() . '_ktp_' . $file->getClientOriginalName();
+            $file->storeAs('ktp', $ktpName, 'public');
         }
 
-        // Hitung total hari sewa
-        $days = Carbon::parse($request->start_date)
-            ->diffInDays(Carbon::parse($request->end_date)) + 1;
+        $proofName = null;
+        if ($request->hasFile('payment_proof')) {
+            $file = $request->file('payment_proof');
+            $proofName = time() . '_proof_' . $file->getClientOriginalName();
+            $file->storeAs('payments', $proofName, 'public');
+        }
 
-        // Hitung total biaya
+        $days = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
         $totalCost = $days * $vehicle->price_per_day;
 
-        // Simpan data booking
-        Booking::create([
-            'vehicle_id'      => $vehicle->id,
-            'customer_name'   => $request->customer_name,
-            'identity_number' => null, // NIK tidak disimpan untuk privasi
-            'identity_card'   => $fileName,
-            'start_date'      => $request->start_date,
-            'end_date'        => $request->end_date,
-            'total_cost'      => $totalCost,
-            'payment_status'  => 'pending' // Status awal
-        ]);
+        DB::transaction(function () use ($request, $vehicle, $ktpName, $proofName, $totalCost) {
+            Booking::create([
+                'vehicle_id'      => $vehicle->id,
+                'customer_id'     => $request->customer_id,
+                'identity_number' => $request->identity_number,
+                'identity_card'   => $ktpName,
+                'payment_proof'   => $proofName,
+                'start_date'      => $request->start_date,
+                'end_date'        => $request->end_date,
+                'total_cost'      => $totalCost,
+                'payment_status'  => 'paid'
+            ]);
 
-        // Ubah status kendaraan menjadi sedang disewa
-        $vehicle->update(['status' => 'rented']);
+            $vehicle->update(['status' => 'rented']);
+        });
 
-        return redirect()->route('booking.index')
-            ->with('success', 'Booking successful! ' . $vehicle->name . ' has been booked.');
+        return redirect()->route('booking.index')->with('success', 'Booking berhasil dan pembayaran tercatat!');
     }
 
-    // Mengunduh laporan booking dalam bentuk PDF
     public function downloadPdf($id)
     {
-        $booking = Booking::with('vehicle')->findOrFail($id);
+        $booking = Booking::with(['vehicle', 'customer'])->findOrFail($id);
 
-        // Konversi gambar KTP ke Base64 agar bisa terbaca di PDF
+        if ($booking->payment_status !== 'paid') {
+            $booking->update(['payment_status' => 'paid']);
+        }
+
         $ktpDataUri = null;
         if ($booking->identity_card) {
-            $name = $booking->identity_card;
-            
-            if (Storage::disk('public')->exists('ktp/' . $name)) {
-                $content = Storage::disk('public')->get('ktp/' . $name);
-                $mime = Storage::disk('public')->mimeType('ktp/' . $name);
+            $path = 'ktp/' . $booking->identity_card;
+            if (Storage::disk('public')->exists($path)) {
+                $content = Storage::disk('public')->get($path);
+                $mime = Storage::disk('public')->mimeType($path);
                 $ktpDataUri = 'data:' . $mime . ';base64,' . base64_encode($content);
             }
         }
 
-        // Generate PDF dari view
         $pdf = Pdf::loadView('booking.pdf', compact('booking', 'ktpDataUri'));
 
-        return $pdf->download('Laporan-Booking-'.$booking->id.'.pdf');
+        return $pdf->download('Laporan-Booking-' . $booking->id . '.pdf');
     }
 
-    // Mengunduh laporan booking berdasarkan rentang tanggal
-    public function laporanPeriode(Request $request)
+    public function returnVehicle($id)
     {
-        // Validasi input tanggal
-        $request->validate([
-            'tanggal_awal'  => 'required|date',
-            'tanggal_akhir' => 'required|date|after_or_equal:tanggal_awal',
-        ]);
+        $booking = Booking::findOrFail($id);
 
-        // Ambil data booking dalam rentang waktu tertentu
-        $booking = Booking::whereBetween('start_date', [
-            $request->tanggal_awal, 
-            $request->tanggal_akhir
-        ])->get();
+        DB::transaction(function () use ($booking) {
+            $vehicle = Vehicle::find($booking->vehicle_id);
+            if ($vehicle) {
+                $vehicle->update(['status' => 'available']);
+            }
+        });
 
-        // Generate PDF laporan
-        $pdf = Pdf::loadView('booking.laporan', compact('booking'));
-
-        return $pdf->download('Laporan-Periode.pdf');
+        return back()->with('success', 'Motor berhasil dikembalikan, pendapatan tetap tercatat!');
     }
 }

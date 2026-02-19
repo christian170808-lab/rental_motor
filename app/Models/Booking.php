@@ -3,24 +3,35 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Booking extends Model
 {
-    // Mengizinkan mass assignment untuk field tertentu
+    protected $table = 'bookings';
+
     protected $fillable = [
         'vehicle_id',
-        'customer_name',
+        'customer_id',
+        'identity_number',
         'identity_card',
+        'payment_proof',
         'start_date',
         'end_date',
         'total_cost',
         'payment_status',
     ];
 
-    // Relasi: Booking ini dimiliki oleh satu data Vehicle
-    public function vehicle(): BelongsTo
+    public function returnVehicle()
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->hasOne(ReturnVehicle::class, 'booking_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class, 'vehicle_id', 'id');
     }
 }

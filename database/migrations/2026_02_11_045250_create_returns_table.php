@@ -8,17 +8,26 @@ return new class extends Migration
 {
     // Menjalankan migrasi untuk membuat tabel 'returns'
     public function up(): void
-    {
-        Schema::create('returns', function (Blueprint $table) {
-            $table->id(); // Primary key auto-increment
-            // Foreign key menghubungkan ke tabel 'bookings'
-            $table->foreignId('booking_id')->constrained('bookings');
-            $table->date('return_date'); // Tanggal pengembalian kendaraan
-            $table->integer('fine')->default(0); // Denda (jika ada keterlambatan/kerusakan)
-            $table->text('notes')->nullable(); // Catatan tambahan mengenai kondisi kendaraan
-            $table->timestamps(); // Kolom created_at dan updated_at
-        });
-    }
+{
+    Schema::create('returns', function (Blueprint $table) {
+        $table->id();
+
+        $table->foreignId('booking_id')
+              ->constrained()
+              ->onDelete('cascade');
+
+        $table->date('return_date');
+
+        $table->integer('late_days')->default(0);
+
+        $table->decimal('penalty', 12, 2)->default(0);
+
+        $table->string('vehicle_condition');
+
+        $table->timestamps();
+    });
+}
+
 
     // Membatalkan migrasi untuk menghapus tabel 'returns'
     public function down(): void

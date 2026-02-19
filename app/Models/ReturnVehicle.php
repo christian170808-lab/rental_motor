@@ -4,22 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class ReturnVehicle extends Model
 {
-    // Menentukan nama tabel secara eksplisit jika berbeda dengan konvensi plural model
     protected $table = 'returns';
 
-    // Mengizinkan mass assignment untuk field tertentu
     protected $fillable = [
         'booking_id',
         'return_date',
         'late_days',
         'penalty',
-        'vehicle_condition'
+        'vehicle_condition',
     ];
 
-    // Relasi: Pengembalian ini milik satu data Booking
-    public function booking()
+    protected $casts = [
+        'return_date' => 'datetime',
+        'penalty'     => 'integer',
+    ];
+
+    public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
     }

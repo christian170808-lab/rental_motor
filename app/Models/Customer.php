@@ -6,23 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Vehicle extends Model
+class Customer extends Model
 {
     use HasFactory;
 
-    protected $table = 'vehicles';
-
     protected $fillable = [
-        'name',
-        'type',
-        'image',
-        'plate_number',
-        'price_per_day',
-        'status',
-    ];
-
-    protected $casts = [
-        'price_per_day' => 'integer',
+        'customer_name',
+        'customer_id',
+        'email',
+        'phone_number',
     ];
 
     public function bookings(): HasMany

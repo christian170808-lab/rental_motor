@@ -1,171 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle List</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-theme@0.1.0-beta.10/dist/select2-bootstrap.min.css" rel="stylesheet" />
-    
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-</head>
-<body>
-    <div class="container mt-4">
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2>Vehicle List</h2>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <input type="text" id="searchInput" class="form-control" placeholder="Search name or plate...">
-                </div>
-                <div class="col-md-6">
-                    <select id="typeFilter" class="form-control" style="width: 100%;">
-                        <option value="">-- All Types --</option>
-                        {{-- Mengambil semua tipe unik dari database untuk dimasukkan ke dropdown --}}
-                        @foreach($vehicles->pluck('type')->unique() as $type)
-                            <option value="{{ $type }}">{{ $type }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
+@extends('layouts.app')
 
-        {{-- Notifikasi Sukses --}}
-        @if(session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
+@section('content')
+<div class="container mt-4">
+    <h2 class="mb-4">Vehicle List</h2>
 
-        {{-- Notifikasi Error --}}
-        @if(session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-        @endif
-        
-        <br>
-
-        @if($vehicles->isEmpty())
-            <p class="alert alert-warning">No vehicle data found.</p>
-        @else
-            <table class="table table-bordered table-striped" id="vehicleTable">
-                <thead>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Plate</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($vehicles as $v)
                     <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Plate</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($vehicles as $v)
-                        <tr>
-                            <td class="text-center">
-                                <img src="{{ asset('image/' . ($v->image ?? 'default.png')) }}" alt="{{ $v->name }}" style="max-width: 100px; height: auto;">
-                            </td>
-                            <td><strong>{{ $v->name }}</strong></td>
-                            <td class="text-center">
-                                <span class="badge badge-secondary vehicle-type">{{ $v->type }}</span>
-                            </td>
-                            <td><strong>{{ $v->plate_number }}</strong></td>
-                            <td class="text-center">
-                                @if($v->status == 'available')
-                                    <span class="badge badge-success">Available</span>
-                                @else
-                                    <span class="badge badge-danger">Rented</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center">
-                                    <a href="{{ route('returns.create', $v->id) }}" class="btn btn-sm btn-info mr-2">Check</a>
-                                    
-                                    @if($v->status == 'available')
-                                        <a href="{{ route('bookings.create', $v->id) }}" class="btn btn-sm btn-success mr-2">Rent</a>
-                                    @else
-                                        <button disabled class="btn btn-sm btn-secondary mr-2" style="cursor: not-allowed;">Unavailable</button>
-                                    @endif
+                        <td>{{ $v->name }}</td>
+                        <td>{{ $v->plate_number }}</td>
+                        <td>
+                            @if(strtolower($v->status) == 'available')
+                                <span class="badge bg-success">Available</span>
+                            @else
+                                <span class="badge bg-danger">{{ ucfirst($v->status) }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            @php 
+                                $lastBooking = $v->bookings->last(); 
+                            @endphp
 
-                                    @if($v->status == 'rented')
-                                        @php
-                                            // Mengambil data booking terakhir untuk kendaraan yang sedang disewa
-                                            $activeBooking = \App\Models\Booking::where('vehicle_id', $v->id)
-                                                                                ->where('payment_status', 'pending') 
-                                                                                ->latest()
-                                                                                ->first();
-                                        @endphp
-                                        @if($activeBooking)
-                                            <a href="{{ route('booking.pdf', $activeBooking->id) }}" class="btn btn-sm btn-danger">PDF</a>
-                                        @endif
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <p id="noDataMessage" class="alert alert-warning d-none">No vehicle data matches your search.</p>
-        @endif
+                            @if($lastBooking && strtolower($v->status) == 'rented')
+                                <a href="{{ route('booking.pdf', $lastBooking->id) }}" class="btn btn-danger btn-sm">
+                                    <i class="fa fa-file-pdf"></i> PDF (ID: {{ $lastBooking->id }})
+                                </a>
+                            @else
+                                <small class="text-muted">ID Motor: {{ $v->id }} | Tidak ada booking aktif</small>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 
-    <script>
-        $(document).ready(function(){
-            // Menginisialisasi plugin Select2 pada dropdown tipe kendaraan
-            $('#typeFilter').select2({
-                theme: "bootstrap",
-                placeholder: "Search or select type...",
-                allowClear: true
-            });
+    {{-- RETURN DATA --}}
+    <h2 class="mb-3 mt-5">Return Data</h2>
 
-            // Fungsi untuk memfilter tabel berdasarkan input teks dan dropdown tipe
-            function filterTable() {
-                var searchText = $('#searchInput').val().toLowerCase();
-                var typeFilter = $('#typeFilter').val();
-                var found = false;
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
 
-                // Melakukan iterasi pada setiap baris data di dalam tabel
-                $("#vehicleTable tbody tr").each(function() {
-                    var row = $(this);
-                    // Mengambil data dari kolom nama dan plat nomor untuk pencarian teks
-                    var name = row.find("td:eq(1)").text().toLowerCase();
-                    var plate = row.find("td:eq(3)").text().toLowerCase();
-                    // Mengambil tipe kendaraan dari badge
-                    var type = row.find(".vehicle-type").text(); 
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Motor</th>
+                    <th>Return Date</th>
+                    <th>Late (hari)</th>
+                    <th>Penalty</th>
+                    <th>Condition</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($returns as $return)
+                    <tr>
+                        <td>{{ $return->booking_id }}</td>
+                        <td>{{ optional($return->booking->vehicle)->name ?? '-' }}</td>
+                        <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d-m-Y') }}</td>
+                        <td>{{ $return->late_days }}</td>
+                        <td>Rp {{ number_format($return->penalty, 0, ',', '.') }}</td>
+                        <td>
+                            @if($return->vehicle_condition == 'Good')
+                                <span class="badge bg-success">Good</span>
+                            @elseif($return->vehicle_condition == 'Minor Damage')
+                                <span class="badge bg-warning text-dark">Minor Damage</span>
+                            @else
+                                <span class="badge bg-danger">Major Damage</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Belum ada data return.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
-                    // Logika Filter: mencocokkan teks dan tipe kendaraan
-                    var matchText = name.indexOf(searchText) > -1 || plate.indexOf(searchText) > -1;
-                    var matchType = typeFilter === "" || type === typeFilter;
-
-                    // Menampilkan atau menyembunyikan baris berdasarkan hasil filter
-                    if (matchText && matchType) {
-                        row.show();
-                        found = true;
-                    } else {
-                        row.hide();
-                    }
-                });
-
-                // Menampilkan pesan jika tidak ada baris yang cocok dengan pencarian
-                if (found) {
-                    $('#noDataMessage').addClass('d-none');
-                } else {
-                    $('#noDataMessage').removeClass('d-none');
-                }
-            }
-
-            // Event listener untuk menjalankan fungsi filter saat input teks berubah
-            $('#searchInput').on('keyup', filterTable);
-            // Event listener untuk menjalankan fungsi filter saat dropdown tipe berubah
-            $('#typeFilter').on('change', filterTable);
-        });
-    </script>
-</body>
-</html>
+</div>
+@endsection

@@ -6,24 +6,37 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    // Menjalankan migrasi untuk membuat tabel 'bookings'
-    public function up(): void
-    {
-        Schema::create('bookings', function (Blueprint $table) {
-            $table->id(); // Primary key auto-increment
-            // Foreign key menghubungkan ke tabel 'vehicles'
-            $table->foreignId('vehicle_id')->constrained('vehicles');
-            $table->string('customer_name'); // Nama pelanggan
-            $table->string('identity_card'); // Nama file foto KTP
-            $table->date('start_date'); // Tanggal mulai sewa
-            $table->date('end_date'); // Tanggal selesai sewa
-            $table->decimal('total_cost', 10, 2); // Total biaya sewa
-            $table->string('payment_status'); // Status pembayaran (misal: 'pending', 'completed')
-            $table->timestamps(); // Kolom created_at dan updated_at
-        });
-    }
+    public function up()
+{
+    Schema::create('bookings', function (Blueprint $table) {
+        $table->id();
 
-    // Membatalkan migrasi untuk menghapus tabel 'bookings'
+        // Relasi ke customer
+        $table->foreignId('customer_id')
+              ->constrained()
+              ->onDelete('cascade');
+
+        // Relasi ke vehicle
+        $table->foreignId('vehicle_id')
+              ->constrained()
+              ->onDelete('cascade');
+
+        $table->string('identity_card');
+        $table->string('payment_proof');
+
+        $table->date('start_date');
+        $table->date('end_date');
+
+        $table->decimal('total_cost', 12, 2);
+
+        $table->string('payment_status')
+              ->default('pending'); // pending, paid, completed
+
+        $table->timestamps();
+    });
+}
+
+
     public function down(): void
     {
         Schema::dropIfExists('bookings');

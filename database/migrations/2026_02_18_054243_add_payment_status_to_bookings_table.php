@@ -12,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bookings', function (Blueprint $table) {
-            // UBAH: Sesuaikan 'customer_name' menjadi kolom yang ada, contoh: 'customer_id'
-            // Atau hapus ->after(...) jika ingin ditaruh di paling akhir
-            $table->string('identity_number')->nullable()->after('customer_id');
+            //
         });
     }
 
@@ -24,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('bookings', function (Blueprint $table) {
-            // Menghapus kolom jika migrasi dibatalkan
-            $table->dropColumn('identity_number');
+            //
         });
     }
 };

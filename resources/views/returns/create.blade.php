@@ -1,115 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Return Vehicle</title>
+@extends('layouts.app')
 
-        <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+@section('content')
 
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            width: 420px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            Return Vehicle: {{ $vehicle->name }}
+        </div>
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-        }
+        <div class="card-body">
 
-        p {
-            margin: 8px 0;
-            font-size: 14px;
-            color: #555;
-        }
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
 
-        label {
-            font-weight: bold;
-            font-size: 14px;
-        }
+            <form action="{{ route('returns.store') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengembalikan motor ini?');">
+                @csrf
 
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            outline: none;
-        }
+                <input type="hidden" name="booking_id" value="{{ $booking->id }}">
 
-        select:focus {
-            border-color: #2a5298;
-        }
+                <p><b>Customer:</b> {{ optional($booking->customer)->customer_name ?? 'N/A' }}</p>
+                <p><b>Plate:</b> {{ $vehicle->plate_number }}</p>
 
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #2a5298;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-            transition: 0.3s;
-        }
+                <div class="mb-3">
+                    <label>Vehicle Condition</label>
+                    <select name="vehicle_condition" class="form-control">
+                        <option value="Good">Good</option>
+                        <option value="Minor Damage">Minor Damage</option>
+                        <option value="Major Damage">Major Damage</option>
+                    </select>
+                </div>
 
-        button:hover {
-            background-color: #1e3c72;
-        }
+                <button type="submit" class="btn btn-primary">
+                    Process Return
+                </button>
 
-        .error {
-            color: red;
-            background: #ffe5e5;
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
+            </form>
 
-<div class="container">
-    <h2>Pengembalian Kendaraan: {{ $vehicle->name }}</h2>
-
-    @if(session('error'))
-        <p style="color:red">{{ session('error') }}</p>
-    @endif
-
-    <form action="/returns/store" method="POST">
-        @csrf
-        
-        <input type="hidden" name="booking_id" value="{{ $booking->id }}">
-
-        <p>Customer Name: {{ $booking->customer_name }}</p>
-        <p>Plate Number: {{ $vehicle->plate_number }}</p>
-        <p>Rental Date: {{ $booking->start_date }}</p>
-        <p>Return Date (Expected): {{ $booking->end_date }}</p>
-
-        <label>Vehicle Condition</label><br>
-        <select name="vehicle_condition" required>
-            <option value="Good">Good</option>
-            <option value="Minor Damage">Minor Damage</option>
-            <option value="Major Damage">Major Damage</option>
-        </select>
-        <br><br>
-
-        <button type="submit">Process Return</button>
-    </form>
+        </div>
+    </div>
 </div>
 
-</body>
-</html>
+@endsection

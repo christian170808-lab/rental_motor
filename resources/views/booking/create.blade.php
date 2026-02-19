@@ -1,62 +1,65 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking {{ $vehicle->name }}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
-    <div class="container mt-5">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h2>Booking Vehicle: {{ $vehicle->name }}</h2>
-                <a href="{{ url('/booking') }}" class="btn btn-secondary">Back to Home</a>
+@extends('layouts.app')
+
+@section('content')
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between">
+            <h4>Booking Vehicle: {{ $vehicle->name }}</h4>
+            <a href="{{ route('booking.index') }}" class="btn btn-secondary btn-sm">
+                Back
+            </a>
+        </div>
+
+        <div class="card-body">
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-            <div class="card-body">
-                
-                @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul>
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+            @endif
 
-                <form action="{{ route('bookings.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    
-                    <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
+            <form action="{{ route('bookings.store') }}"
+                  method="POST"
+                  enctype="multipart/form-data">
+                @csrf
 
-                    <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" name="customer_name" class="form-control" required>
-                    </div>
+                <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
 
-                    <div class="form-group">
-                        <label>Upload ID Card Photo</label>
-                        <input type="file" name="identity_card" class="form-control" accept="image/*" required>
-                        <small class="text-muted">The ID card photo is used for rental data.</small>
-                    </div>
+ <div class="mb-3"> <label>Customer Name</label> <input type="text" name="customer_name" class="form-control" required> </div>
+ <div class="mb-3"> <label>Customer ID</label> <input type="text" name="customer_id" class="form-control" required> </div>
 
-                    <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" name="start_date" class="form-control" required>
-                    </div>
+                <div class="mb-3">
+                    <label>ID Card Photo</label>
+                    <input type="file" name="identity_card" class="form-control" required>
+                </div>
 
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" name="end_date" class="form-control" required>
-                    </div>
+                <div class="mb-3">
+                    <label>Proof of Payment</label>
+                    <input type="file" name="payment_proof" class="form-control" required>
+                </div>
 
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-primary">Confirm Booking</button>
-                    </div>
-                </form>
-            </div>
+                <div class="mb-3">
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label>End Date</label>
+                    <input type="date" name="end_date" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Confirm Booking
+                </button>
+
+            </form>
         </div>
     </div>
-</body>
-</html>
+</div>
+
+@endsection

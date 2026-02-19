@@ -7,17 +7,20 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     // Menjalankan migrasi untuk membuat tabel 'vehicles'
-    public function up(): void
-    {
-        Schema::create('vehicles', function (Blueprint $table) {
-            $table->id(); // Primary key auto-increment
-            $table->string('name'); // Nama kendaraan
-            $table->string('plate_number'); // Nomor plat kendaraan
-            $table->string('status'); // Status kendaraan (misal: 'available', 'rented')
-            $table->string('image')->nullable(); // Path file gambar kendaraan (opsional)
-            $table->timestamps(); // Kolom created_at dan updated_at
-        });
-    }
+    public function up()
+{
+    Schema::create('vehicles', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('type'); // skuter, sport, trail
+        $table->string('plate_number')->unique();
+        $table->decimal('price_per_day', 12, 2);
+        $table->string('status')->default('available'); // available, rented, maintenance
+        $table->string('image')->nullable();
+        $table->timestamps();
+    });
+}
+
 
     // Membatalkan migrasi untuk menghapus tabel 'vehicles'
     public function down(): void
