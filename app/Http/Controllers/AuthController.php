@@ -21,12 +21,19 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
-            return redirect()->route('succes')->with('success', 'Welcome! You have successfully logged in.');
+            return redirect()->route('dashboard')->with('success', 'Selamat datang! Login berhasil.');
+        }
+
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return back()->withErrors([
+                'email' => 'Email tidak ditemukan.',
+            ])->withInput();
         }
 
         return back()->withErrors([
-            'email' => 'Invalid credentials',
+            'password' => 'Password salah.',
         ])->withInput();
     }
 

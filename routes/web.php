@@ -18,10 +18,12 @@ Route::controller(AuthController::class)->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::view('/succes', 'auth.succes')->name('succes');
+    
 
     Route::controller(VehicleController::class)->group(function () {
         Route::get('/vehicles', 'index')->name('vehicles.index');
+        Route::get('/vehicles/create', 'create')->name('vehicles.create');  // ← tambah
+        Route::post('/vehicles', 'store')->name('vehicles.store'); 
     });
 
     Route::prefix('booking')->controller(BookingController::class)->group(function () {
@@ -40,5 +42,8 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(CustomerController::class)->group(function () {
         Route::get('/customers', 'index')->name('customers.index');
+         Route::get('/customers/{id}/edit', 'edit')->name('customers.edit');        // ← tambah
+    Route::put('/customers/{id}', 'update')->name('customers.update');         // ← tambah
+    Route::delete('/customers/{id}', 'destroy')->name('customers.destroy');
     });
 });

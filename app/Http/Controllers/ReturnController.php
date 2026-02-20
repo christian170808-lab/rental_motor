@@ -37,7 +37,7 @@ class ReturnController extends Controller
         $vehicle = Vehicle::findOrFail($vehicle_id);
 
         if ($vehicle->status === 'available') {
-            return back()->with('error', 'This vehicle is not currently rented.');
+    return redirect()->route('booking.index')->with('error', 'Motor sedang tidak disewa.');
         }
 
         $booking = Booking::where('vehicle_id', $vehicle_id)
@@ -86,7 +86,7 @@ class ReturnController extends Controller
                 case 'trail':
                     $multiplier = 1.5;
                     break;
-                case 'matik':
+                case 'scooter':
                     $multiplier = 1;
                     break;
             }

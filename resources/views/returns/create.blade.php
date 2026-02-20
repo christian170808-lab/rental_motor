@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="container mt-5">
     <div class="card">
         <div class="card-header">
@@ -10,22 +9,15 @@
 
         <div class="card-body">
 
-            @if(session('error'))
-                <div class="alert alert-danger">
-                    {{ session('error') }}
-                </div>
-            @endif
-
             <form action="{{ route('returns.store') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengembalikan motor ini?');">
                 @csrf
-
                 <input type="hidden" name="booking_id" value="{{ $booking->id }}">
 
                 <p><b>Customer:</b> {{ optional($booking->customer)->customer_name ?? 'N/A' }}</p>
                 <p><b>Plate:</b> {{ $vehicle->plate_number }}</p>
 
                 <div class="mb-3">
-                    <label>Vehicle Condition</label>
+                    <label class="form-label">Vehicle Condition</label>
                     <select name="vehicle_condition" class="form-control">
                         <option value="Good">Good</option>
                         <option value="Minor Damage">Minor Damage</option>
@@ -33,14 +25,10 @@
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Process Return
-                </button>
-
+                <button type="submit" class="btn btn-primary">Process Return</button>
             </form>
 
         </div>
     </div>
 </div>
-
 @endsection

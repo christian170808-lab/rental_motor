@@ -40,15 +40,16 @@ class BookingController extends Controller
         if ($vehicle->status == 'rented') {
             return back()->with('error', 'Vehicle Not Available');
         }
+ $customers = \App\Models\Customer::all(); // ← tambah ini
 
-        return view('booking.create', compact('vehicle'));
+    return view('booking.create', compact('vehicle', 'customers')); // ← tambah customers
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'vehicle_id'    => ['required', 'exists:vehicles,id'],
-            'customer_id'   => ['required', 'exists:customers,id'],
+            'customer_id' => ['required', 'exists:customers,id'],
             'identity_card' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'payment_proof' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'start_date'    => ['required', 'date'],
@@ -77,7 +78,7 @@ class BookingController extends Controller
         DB::transaction(function () use ($request, $vehicle, $ktpName, $proofName, $totalCost) {
             Booking::create([
                 'vehicle_id'      => $vehicle->id,
-                'customer_id'     => $request->customer_id,
+               'customer_id' => Customer::where('customer_id', $request->customer_id)->value('id'),
                 'identity_number' => $request->identity_number,
                 'identity_card'   => $ktpName,
                 'payment_proof'   => $proofName,

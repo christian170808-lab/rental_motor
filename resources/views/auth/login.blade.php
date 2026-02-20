@@ -11,7 +11,7 @@
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            background: #1e1e1e;
+            background: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
