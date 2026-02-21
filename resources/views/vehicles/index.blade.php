@@ -4,10 +4,10 @@
 <style>
 .container.mt-4 { max-width: 1400px; }
 .section-title { position: relative; padding-bottom: 12px; margin-bottom: 24px; font-weight: 700; }
-.section-title::after { content: ''; position: absolute; bottom: 0; left: 0; width: 60px; height: 4px; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 2px; }
+.section-title::after { content: ''; position: absolute; bottom: 0; left: 0; width: 60px; height: 4px; background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 2px; }
 .table-container { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e5e7eb; margin-bottom: 2.5rem; }
 .table-responsive-custom { max-height: 420px; overflow-y: auto; position: relative; }
-.table thead th { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, #1f2937, #374151); color: white; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; border-bottom: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.table thead th { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; border-bottom: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 .table tbody tr { transition: all 0.18s ease; }
 .table tbody tr:hover { background: #f1f5f9; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 .table td, .table th { padding: 14px 16px !important; vertical-align: middle; border-color: #e5e7eb; }

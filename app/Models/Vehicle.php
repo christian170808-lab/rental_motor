@@ -12,19 +12,24 @@ class Vehicle extends Model
 
     protected $table = 'vehicles';
 
+    // Kolom yang boleh diisi via mass assignment
     protected $fillable = [
         'name',
-        'type',
-        'image',
+        'type',          // scooter, sport, adventure
+        'image',         // Nama file foto motor di public/image/
         'plate_number',
         'price_per_day',
-        'status',
+        'status',        // available, rented
     ];
 
+    // Cast tipe data kolom tertentu
     protected $casts = [
         'price_per_day' => 'integer',
     ];
 
+    /**
+     * Relasi: Satu kendaraan bisa memiliki banyak booking
+     */
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);

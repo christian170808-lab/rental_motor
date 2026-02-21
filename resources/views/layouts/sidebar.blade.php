@@ -1,41 +1,44 @@
-
-<div class="sidebar" style="width: 250px; background-color: #f8f9fa; height: 100vh; padding: 20px; position: fixed; top: 0; left: 0; overflow-y: auto; box-shadow: 2px 0 8px rgba(0,0,0,0.08);">
-    <h2 class="text-center mb-4 title-underline" style="color: black; font-weight: 800; letter-spacing: 1px;">RentalMotor</h2>
-    <hr style="border-color: #dee2e6; margin: 1.5rem 0;">
+<div class="sidebar" style="width: 250px; background: linear-gradient(180deg, #1e3a8a, #1e40af); height: 100vh; padding: 20px; position: fixed; top: 0; left: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(0,0,0,0.3);">
+    
+    {{-- LOGO + TITLE --}}
+    <div class="d-flex align-items-center justify-content-center mb-2 gap-2">
+        <h2 class="mb-0 title-underline" style="color: #ffffff; font-weight: 800; letter-spacing: 1px; font-size: 1.3rem;">RentalMotor</h2>
+        <i class="fas fa-motorcycle" style="font-size: 1.8rem; color: #60a5fa;"></i>
+    </div>
+    <hr style="border-color: #4b5563; margin: 1.2rem 0;">
 
     <ul class="nav flex-column">
         <li class="nav-item mb-2">
             <a class="nav-link d-flex align-items-center sidebar-link" href="{{ route('dashboard') }}">
-                <i class="fas fa-tachometer-alt me-3" style="font-size: 1.2rem;"></i>
+                <i class="fas fa-gauge-high me-3" style="font-size: 1.1rem; width: 20px; text-align: center;"></i>
                 Dashboard
             </a>
         </li>
         <li class="nav-item mb-2">
             <a class="nav-link d-flex align-items-center sidebar-link" href="{{ route('vehicles.index') }}">
-                <i class="fas fa-motorcycle me-3" style="font-size: 1.2rem;"></i>
-                Data Motor
+                <i class="fas fa-motorcycle me-3" style="font-size: 1.1rem; width: 20px; text-align: center;"></i>
+                Vehicle Data
             </a>
         </li>
         <li class="nav-item mb-2">
             <a class="nav-link d-flex align-items-center sidebar-link" href="{{ route('booking.index') }}">
-                <i class="fas fa-calendar-check me-3" style="font-size: 1.2rem;"></i>
-                Pesanan
+                <i class="fas fa-file-invoice me-3" style="font-size: 1.1rem; width: 20px; text-align: center;"></i>
+                Orders
             </a>
         </li>
         <li class="nav-item mb-2">
             <a class="nav-link d-flex align-items-center sidebar-link" href="{{ route('customers.index') }}">
-                <i class="fas fa-users me-3" style="font-size: 1.2rem;"></i>
-                Data Customer
+                <i class="fas fa-users me-3" style="font-size: 1.1rem; width: 20px; text-align: center;"></i>
+                Customer Data
             </a>
         </li>
     </ul>
 
-    <!-- Logout di bawah (tetap merah agar kontras dan jelas sebagai aksi keluar) -->
     <div style="position: absolute; bottom: 30px; left: 20px; right: 20px;">
         <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit" class="btn btn-link sidebar-link logout-btn" style="width: 100%; text-align: left; padding: 0.75rem 1rem; color: #cc0000; font-weight: bold; font-size: 1.1rem; text-decoration: none;">
-                <i class="fas fa-sign-out-alt me-3"></i> Logout
+            <button type="submit" class="btn btn-link sidebar-link logout-btn d-flex align-items-center" style="width: 100%; text-align: left; padding: 0.75rem 1rem; text-decoration: none;">
+                <i class="fas fa-right-from-bracket me-3" style="font-size: 1.1rem; width: 20px; text-align: center;"></i> Logout
             </button>
         </form>
     </div>
@@ -43,9 +46,9 @@
 
 <style>
     .sidebar-link {
-        color: #111827;               
-        font-size: 1.125rem;          
-        font-weight: 700;              
+        color: #d1d5db;
+        font-size: 1.05rem;
+        font-weight: 600;
         padding: 0.75rem 1rem;
         border-radius: 8px;
         transition: all 0.2s ease;
@@ -53,25 +56,30 @@
     }
 
     .sidebar-link:hover {
-        background-color: #e5e7eb;     /* abu muda saat hover */
-        border-left: 5px solid #111827; /* border kiri tebal hitam */
+        background-color: rgba(255,255,255,0.15);
+        border-left: 4px solid #93c5fd;
         padding-left: 0.75rem;
-        color: #000000;                /* lebih hitam saat hover */
-        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .sidebar-link.active {
+        background-color: rgba(255,255,255,0.2);
+        border-left: 4px solid #93c5fd;
+        color: #ffffff;
     }
 
     .logout-btn {
-        color: #cc0000 !important;
+        color: #fca5a5 !important;
         font-weight: 700;
     }
 
     .logout-btn:hover {
-        background-color: #fee2e2;
-        border-left: 5px solid #991b1b;
-        color: #991b1b !important;
+        background-color: rgba(220,38,38,0.2) !important;
+        border-left: 4px solid #ef4444 !important;
+        color: #fca5a5 !important;
     }
 
-    /* Garis bawah untuk judul RentalMotor */
     .title-underline {
         position: relative;
         display: inline-block;
@@ -85,15 +93,8 @@
         bottom: 0;
         width: 60%;
         height: 3px;
-        background-color: #111827;     /* hitam pekat */
+        background-color: #60a5fa;
         transform: translateX(-50%);
         border-radius: 2px;
-    }
-
-    /* Optional: active state (untuk halaman yang sedang aktif) */
-    .sidebar-link.active {
-        background-color: #e5e7eb;
-        border-left: 5px solid #111827;
-        color: #000000;
     }
 </style>

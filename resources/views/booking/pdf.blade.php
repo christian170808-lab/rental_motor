@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Booking - {{ $booking->id }}</title>
+    <title>Booking Report - {{ $booking->id }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,8 +50,8 @@
 <body>
 
 <div class="header">
-    <h2>Laporan Booking Kendaraan</h2>
-    <p>Bukti Penyewaan Resmi</p>
+    <h2>Vehicle Booking Report</h2>
+    <p>Official Rental Receipt</p>
 </div>
 
 <table class="table-data">
@@ -61,30 +61,30 @@
     </tr>
 
     <tr>
-        <th>Kode Customer</th>
+        <th>Customer Code</th>
         <td>{{ optional($booking->customer)->customer_id ?? '-' }}</td>
     </tr>
 
     <tr>
-        <th>Nama Pelanggan</th>
+        <th>Customer Name</th>
         <td>{{ optional($booking->customer)->customer_name ?? '-' }}</td>
     </tr>
 
     @if($booking->identity_card)
     <tr>
-        <th>Foto KTP</th>
+        <th>ID Card Photo</th>
         <td>
             @if(!empty($ktpDataUri))
                 <img src="{{ $ktpDataUri }}" alt="Foto KTP" class="ktp-image">
             @else
-                Tidak tersedia
+                Not available
             @endif
         </td>
     </tr>
     @endif
 
     <tr>
-        <th>Kendaraan</th>
+        <th>Vehicle</th>
         <td>
             {{ $booking->vehicle->name }} 
             ({{ $booking->vehicle->plate_number }})
@@ -92,28 +92,28 @@
     </tr>
 
     <tr>
-        <th>Tanggal Mulai Sewa</th>
+        <th>Rental Start Date</th>
         <td>
             {{ \Carbon\Carbon::parse($booking->start_date)->format('d-m-Y') }}
         </td>
     </tr>
 
     <tr>
-        <th>Tanggal Selesai Sewa</th>
+        <th>Rental End Date</th>
         <td>
             {{ \Carbon\Carbon::parse($booking->end_date)->format('d-m-Y') }}
         </td>
     </tr>
 
     <tr class="total-row">
-        <th>Total Biaya</th>
+        <th>Total Cost</th>
         <td>
             Rp {{ number_format($booking->total_cost, 0, ',', '.') }}
         </td>
     </tr>
 
     <tr>
-        <th>Status Pembayaran</th>
+        <th>Payment Status</th>
         <td style="text-transform: uppercase;">
             {{ $booking->payment_status }}
         </td>
@@ -121,7 +121,7 @@
 </table>
 
 <div class="footer">
-    Dicetak pada: {{ \Carbon\Carbon::now()->format('d-m-Y H:i') }}
+    Printed on: {{ \Carbon\Carbon::now()->format('d-m-Y H:i') }}
 </div>
 
 </body>

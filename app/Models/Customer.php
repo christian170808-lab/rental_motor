@@ -10,13 +10,17 @@ class Customer extends Model
 {
     use HasFactory;
 
+    // Kolom yang boleh diisi via mass assignment
     protected $fillable = [
         'customer_name',
-        'customer_id',
+        'customer_id',  // Unique customer code (e.g. CUST001)
         'email',
-        'phone_number',
+        'phone',        // Phone number column in database
     ];
 
+    /**
+     * Relasi: Satu customer bisa memiliki banyak booking
+     */
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);

@@ -8,28 +8,28 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    // Menggunakan factory dan notifikasi bawaan Laravel
     use HasFactory, Notifiable;
 
-    // Mengizinkan mass assignment untuk field tertentu
+    // Kolom yang boleh diisi via mass assignment
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    // Menyembunyikan field sensitif saat serialisasi data
+    // Sembunyikan kolom sensitif saat serialisasi (toArray/toJson)
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    // Mengubah tipe data field tertentu
+    // Cast tipe data otomatis
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed', // Password otomatis di-hash
+            'password'          => 'hashed', // Password otomatis di-hash saat disimpan
         ];
     }
 }
+
