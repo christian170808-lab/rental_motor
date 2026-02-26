@@ -7,9 +7,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReturnVehicle extends Model
 {
-    protected $table = 'returns'; // Nama tabel berbeda dari nama model
+    /*
+    |--------------------------------------------------------------------------
+    | TABLE CONFIGURATION
+    |--------------------------------------------------------------------------
+    */
+    protected $table = 'returns';
 
-    // Kolom yang boleh diisi via mass assignment
+    /*
+    |--------------------------------------------------------------------------
+    | MASS ASSIGNABLE FIELDS
+    |--------------------------------------------------------------------------
+    */
     protected $fillable = [
         'booking_id',
         'return_date',
@@ -18,17 +27,29 @@ class ReturnVehicle extends Model
         'vehicle_condition',
     ];
 
-    // Cast tipe data kolom tertentu
+    /*
+    |--------------------------------------------------------------------------
+    | ATTRIBUTE CASTING
+    |--------------------------------------------------------------------------
+    | Otomatis convert tipe data dari database
+    */
     protected $casts = [
-        'return_date' => 'datetime', // Otomatis dikonversi ke Carbon object
+        'return_date' => 'datetime',
+        'late_days'   => 'integer',
         'penalty'     => 'integer',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIPS
+    |--------------------------------------------------------------------------
+    */
+
     /**
-     * Relasi: Setiap return terkait dengan satu booking
+     * Data pengembalian milik satu Booking
      */
     public function booking(): BelongsTo
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 }

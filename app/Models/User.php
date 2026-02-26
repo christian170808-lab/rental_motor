@@ -10,26 +10,41 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    // Kolom yang boleh diisi via mass assignment
+    /*
+    |--------------------------------------------------------------------------
+    | MASS ASSIGNABLE
+    |--------------------------------------------------------------------------
+    | Field yang boleh diisi menggunakan create() / update()
+    */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    // Sembunyikan kolom sensitif saat serialisasi (toArray/toJson)
+    /*
+    |--------------------------------------------------------------------------
+    | HIDDEN ATTRIBUTES
+    |--------------------------------------------------------------------------
+    | Tidak ikut tampil saat data diubah ke array / JSON
+    */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    // Cast tipe data otomatis
+    /*
+    |--------------------------------------------------------------------------
+    | ATTRIBUTE CASTING
+    |--------------------------------------------------------------------------
+    */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed', // Password otomatis di-hash saat disimpan
+
+            // Laravel otomatis hash password
+            'password' => 'hashed',
         ];
     }
 }
-

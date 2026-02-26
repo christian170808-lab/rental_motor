@@ -2,42 +2,44 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Vehicle extends Model
+class Payment extends Model
 {
-    use HasFactory;
-
     /*
     |--------------------------------------------------------------------------
     | TABLE CONFIGURATION
     |--------------------------------------------------------------------------
     */
-    protected $table = 'vehicles';
+    protected $table = 'payments';
 
     /*
     |--------------------------------------------------------------------------
     | MASS ASSIGNABLE FIELDS
     |--------------------------------------------------------------------------
+    | Field yang boleh diisi menggunakan create() / update()
     */
     protected $fillable = [
-        'name',
-        'type',          // scooter | sport | trail
-        'image',         // filename pada folder public/image
-        'plate_number',
-        'price_per_day',
-        'status',        // available | rented
+        'booking_id',
+        'customer_id',
+        'vehicle_id',
+        'start_date',
+        'end_date',
+        'duration',
+        'total_price',
+        'status',
     ];
 
     /*
     |--------------------------------------------------------------------------
     | ATTRIBUTE CASTING
     |--------------------------------------------------------------------------
+    | Otomatis convert tipe data
     */
     protected $casts = [
-        'price_per_day' => 'integer',
+        'start_date'  => 'date',
+        'end_date'    => 'date',
+        'total_price' => 'float',
     ];
 
     /*
@@ -47,10 +49,26 @@ class Vehicle extends Model
     */
 
     /**
-     * Satu kendaraan dapat memiliki banyak booking
+     * Payment milik satu Booking
      */
-    public function bookings(): HasMany
+    public function booking()
     {
-        return $this->hasMany(Booking::class, 'vehicle_id', 'id');
+        return $this->belongsTo(Booking::class, 'booking_id', 'id');
+    }
+
+    /**
+     * Payment milik satu Customer
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id', 'id');
+    }
+
+    /**
+     * Payment terkait satu Vehicle
+     */
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class, 'vehicle_id', 'id');
     }
 }

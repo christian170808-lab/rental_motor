@@ -7,52 +7,113 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    /**
-     * Menampilkan daftar semua customer
-     */
-    public function index()
+    /*
+    |--------------------------------------------------------------------------
+    | INDEX
+    | - List all customers with optional search
+    |--------------------------------------------------------------------------
+    */
+    public function index(Request $request)
     {
-        $customers = Customer::all();
+        $customers = Customer::query()
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('customer_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('phone_number', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->get();
+
         return view('customers.index', compact('customers'));
     }
 
-    /**
-     * Menampilkan form edit customer berdasarkan ID
-     */
-    public function edit($id)
+    /*
+    |--------------------------------------------------------------------------
+    | STORE
+    | - Validate and create a new customer with auto-generated customer_id
+    |--------------------------------------------------------------------------
+    */
+    public function store(Request $request)
     {
-        $customer = Customer::findOrFail($id); // Otomatis 404 jika tidak ditemukan
-        return view('customers.edit', compact('customer'));
+        $validated = $this->validateCustomer($request);
+
+        Customer::create([
+            ...$validated,
+            'customer_id' => $this->generateCustomerId(),
+        ]);
+
+        return redirect()
+            ->route('customers.index')
+            ->with('success', 'Customer added successfully!');
     }
 
-    /**
-     * Menyimpan perubahan data customer
-     * FIX: Kolom 'phone' diubah ke 'phone_number' sesuai migration
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE
+    | - Validate and update existing customer data
+    |--------------------------------------------------------------------------
+    */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'customer_name' => ['required', 'string', 'max:100'],
-            'email'         => ['required', 'email'],
-            'phone'         => ['required', 'string'],
-        ]);
+        $validated = $this->validateCustomer($request, $id);
 
-        $customer = Customer::findOrFail($id);
-        $customer->update([
-            'customer_name' => $request->customer_name,
-            'email'         => $request->email,
-            'phone'         => $request->phone, // Column name in database is 'phone'
-        ]);
+        Customer::findOrFail($id)->update($validated);
 
-        return redirect()->route('customers.index')->with('success', 'Data customer berhasil diupdate!');
+        return redirect()
+            ->route('customers.index')
+            ->with('success', 'Customer updated successfully!');
     }
 
-    /**
-     * Menghapus customer berdasarkan ID
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | DESTROY
+    | - Delete a customer record
+    |--------------------------------------------------------------------------
+    */
     public function destroy($id)
     {
         Customer::findOrFail($id)->delete();
-        return redirect()->route('customers.index')->with('success', 'Customer berhasil dihapus!');
+
+        return redirect()
+            ->route('customers.index')
+            ->with('success', 'Customer deleted successfully!');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRIVATE: VALIDATE CUSTOMER
+    | - Reusable validation for store and update
+    | - Gmail only, unique email per customer
+    |--------------------------------------------------------------------------
+    */
+    private function validateCustomer(Request $request, $id = null)
+    {
+        return $request->validate([
+            'customer_name' => 'required|string|max:100',
+            'email'         => [
+                'required',
+                'email',
+                'regex:/@gmail\.com$/',
+                "unique:customers,email,{$id}",
+            ],
+            'phone_number'  => 'required|string',
+            'address'       => 'required|string|max:255',
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRIVATE: GENERATE CUSTOMER ID
+    | - Format: CUST001, CUST002, ...
+    |--------------------------------------------------------------------------
+    */
+    private function generateCustomerId()
+    {
+        $last   = Customer::latest('id')->first();
+        $number = $last ? intval(substr($last->customer_id, 4)) + 1 : 1;
+
+        return 'CUST' . str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 }

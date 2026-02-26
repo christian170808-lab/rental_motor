@@ -6,25 +6,27 @@ use App\Models\Booking;
 use App\Models\ReturnVehicle;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ReturnController extends Controller
 {
-    /**
-     * Menampilkan riwayat pengembalian kendaraan
-     * - Bisa dicari berdasarkan nama customer, booking ID, atau plat nomor
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | INDEX
+    | - List return history with optional search by booking ID or plate
+    |--------------------------------------------------------------------------
+    */
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $query  = ReturnVehicle::with('booking.vehicle')->latest();
+
+        $query = ReturnVehicle::with('booking.vehicle')->latest();
 
         if ($search) {
             $query->whereHas('booking', function ($q) use ($search) {
-                $q->where('customer_name', 'like', "%{$search}%")
-                  ->orWhere('id', 'like', "%{$search}%");
+                $q->where('id', 'like', "%{$search}%");
             })->orWhereHas('booking.vehicle', function ($q) use ($search) {
                 $q->where('plate_number', 'like', "%{$search}%");
             });
@@ -35,47 +37,42 @@ class ReturnController extends Controller
         return view('returns.index', compact('returns', 'search'));
     }
 
-    /**
-     * Menampilkan form pengembalian kendaraan
-     * - Cek apakah motor sedang disewa (tidak bisa return jika available)
-     * - Cari booking aktif yang belum dikembalikan
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE
+    | - Show return form for a specific vehicle
+    |--------------------------------------------------------------------------
+    */
     public function create($vehicle_id)
     {
         $vehicle = Vehicle::findOrFail($vehicle_id);
 
-        // Motor harus berstatus 'rented' untuk bisa diproses return
         if ($vehicle->status === 'available') {
-            return redirect()->route('booking.index')->with('error', 'The motorcycle is currently not rented.');
+            return redirect()->route('booking.index')
+                ->with('error', 'This motorcycle is not currently rented.');
         }
 
-        // Cari booking aktif yang belum ada record returnnya
         $booking = Booking::where('vehicle_id', $vehicle_id)
             ->whereDoesntHave('returnVehicle')
             ->latest()
             ->first();
 
         if (!$booking) {
-            return back()->with('error', 'Active booking not found.');
+            return back()->with('error', 'No active booking found for this vehicle.');
         }
 
         return view('returns.create', compact('vehicle', 'booking'));
     }
 
-    /**
-     * Memproses pengembalian kendaraan
-     * - Hitung keterlambatan (denda Rp 50.000/hari)
-     * - Hitung denda kerusakan berdasarkan tipe motor dan tingkat kerusakan
-     *   Tipe motor:
-     *     - sport      → multiplier 2x
-     *     - adventure  → multiplier 1.5x  (FIX: dari 'trail' ke 'adventure')
-     *     - scooter    → multiplier 1x
-     *   Tingkat kerusakan:
-     *     - Minor Damage → base fee Rp 150.000
-     *     - Major Damage → base fee Rp 500.000
-     * - Update status motor kembali ke 'available'
-     * - Update payment_status booking ke 'completed'
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | STORE
+    | - Process vehicle return
+    | - Calculate late penalty (Rp 50.000/day)
+    | - Calculate damage penalty based on vehicle type
+    |   Scooter: base fee | Sport: x2 | Trail: x1.5
+    |--------------------------------------------------------------------------
+    */
     public function store(Request $request)
     {
         $request->validate([
@@ -85,45 +82,36 @@ class ReturnController extends Controller
 
         $booking = Booking::with('vehicle')->findOrFail($request->booking_id);
 
-        // Hitung keterlambatan
-        $tglSelesaiSewa = Carbon::parse($booking->end_date)->startOfDay();
-        $tglKembali     = Carbon::now()->startOfDay();
-        $lateDays       = 0;
-        $latePenalty    = 0;
+        // Calculate late penalty
+        $endDate    = Carbon::parse($booking->end_date)->startOfDay();
+        $returnDate = Carbon::now()->startOfDay();
+        $lateDays   = 0;
+        $latePenalty = 0;
 
-        if ($tglKembali->gt($tglSelesaiSewa)) {
-            $lateDays    = $tglKembali->diffInDays($tglSelesaiSewa);
-            $latePenalty = $lateDays * 50000; // Rp 50.000 per hari telat
+        if ($returnDate->gt($endDate)) {
+            $lateDays    = $endDate->diffInDays($returnDate);
+            $latePenalty = $lateDays * 50000;
         }
 
-        // Hitung denda kerusakan berdasarkan tipe dan kondisi
-        $damagePenalty = 0;
+        // Calculate damage penalty
         $condition     = trim($request->vehicle_condition);
+        $damagePenalty = 0;
 
-        if ($condition === 'Minor Damage' || $condition === 'Major Damage') {
-            $baseDamageFee = $condition === 'Minor Damage' ? 150000 : 500000;
-            $multiplier    = 1;
+        if (in_array($condition, ['Minor Damage', 'Major Damage'])) {
+            $baseFee = $condition === 'Minor Damage' ? 150000 : 500000;
 
-            // FIX: diubah dari 'trail' ke 'adventure' sesuai perubahan database
-            switch (strtolower($booking->vehicle->type)) {
-                case 'sport':
-                    $multiplier = 2;
-                    break;
-                case 'trail':
-                    $multiplier = 1.5;
-                    break;
-                case 'scooter':
-                    $multiplier = 1;
-                    break;
-            }
+            $multiplier = match (strtolower($booking->vehicle->type)) {
+                'sport' => 2,
+                'trail' => 1.5,
+                default => 1, // scooter
+            };
 
-            $damagePenalty = $baseDamageFee * $multiplier;
+            $damagePenalty = $baseFee * $multiplier;
         }
 
         $totalPenalty = $latePenalty + $damagePenalty;
 
         try {
-            // Simpan data return, update status motor dan booking dalam satu transaction
             DB::transaction(function () use ($booking, $lateDays, $totalPenalty, $condition) {
                 ReturnVehicle::create([
                     'booking_id'        => $booking->id,
@@ -133,16 +121,16 @@ class ReturnController extends Controller
                     'vehicle_condition' => $condition,
                 ]);
 
-                // Motor kembali tersedia setelah dikembalikan
                 $booking->vehicle->update(['status' => 'available']);
-
-                // Tandai booking sebagai selesai
                 $booking->update(['payment_status' => 'completed']);
             });
 
-            return redirect()->route('vehicles.index')->with('success',
-                'Return successful! Late: ' . $lateDays . ' days. Total Fine: Rp ' . number_format($totalPenalty, 0, ',', '.')
+            return redirect()->route('vehicles.index')->with(
+                'success',
+                'Return processed! Late days: ' . $lateDays .
+                '. Total fine: Rp ' . number_format($totalPenalty, 0, ',', '.')
             );
+
         } catch (\Exception $e) {
             Log::error('Return error: ' . $e->getMessage());
             return back()->with('error', 'An error occurred while processing the return.');
