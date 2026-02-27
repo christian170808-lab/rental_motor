@@ -32,8 +32,18 @@ class BookingController extends Controller
         }
 
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
+    $query->where('type', $request->type);
+    }
+
+    if ($request->filled('status')) {
+        $query->whereHas('bookings', function ($q) use ($request) {
+            if ($request->status === 'dp') {
+                $q->where('payment_status', 'paid')->where('payment_type', 'dp');
+            } elseif ($request->status === 'paid') {
+                $q->where('payment_status', 'paid')->where('payment_type', 'full');
+            }
+        });
+    }
 
         $vehicles = $query->orderByRaw("FIELD(status, 'rented', 'available')")
                           ->orderByRaw("FIELD(type, 'scooter', 'sport', 'trail')")
@@ -44,11 +54,16 @@ class BookingController extends Controller
         $customers = Customer::all();
 
         $rentedVehicles = Vehicle::with(['bookings.customer'])
-            ->whereHas('bookings', function ($q) {
-                $q->where('payment_status', 'paid')
-                  ->whereIn('payment_type', ['dp', 'full']);
-            })
-            ->get();
+        ->whereHas('bookings', function ($q) use ($request) {
+            if ($request->status === 'dp') {
+                $q->where('payment_status', 'paid')->where('payment_type', 'dp');
+            } elseif ($request->status === 'paid') {
+                $q->where('payment_status', 'paid')->where('payment_type', 'full');
+            } else {
+                $q->where('payment_status', 'paid')->whereIn('payment_type', ['dp', 'full']);
+            }
+        })
+        ->get();
 
         return view('booking.index', compact('vehicles', 'customers', 'rentedVehicles'));
     }

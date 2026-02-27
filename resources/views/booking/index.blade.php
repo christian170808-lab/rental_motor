@@ -179,9 +179,8 @@
             <div class="col-md-4 d-flex gap-2 justify-content-end align-items-center">
                 <select name="status" class="form-select" onchange="this.form.submit()" style="max-width:150px;">
                     <option value="">All Status</option>
-                    <option value="active"    {{ request('status') == 'active'    ? 'selected' : '' }}>Active</option>
-                    <option value="paid"      {{ request('status') == 'paid'      ? 'selected' : '' }}>Paid</option>
-                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="dp"   {{ request('status') == 'dp'   ? 'selected' : '' }}>DP</option>
+                    <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
                 </select>
                 <button type="button" class="btn-add-rent" data-bs-toggle="modal" data-bs-target="#addRentModal">
                     <i class="fas fa-plus"></i> Add Rent
@@ -434,10 +433,6 @@
                                         <div class="penalty-row">
                                             <span>Late return <span id="lateDaysLabel{{ $v->id }}">{{ $lateDays > 0 ? '(' . $lateDays . ' days x Rp 50,000)' : '(on time)' }}</span></span>
                                             <span id="latePenaltyLabel{{ $v->id }}">Rp {{ number_format($latePenalty, 0, ',', '.') }}</span>
-                                        </div>
-                                        <div class="penalty-row">
-                                            <span>Damage <span id="damageDesc{{ $v->id }}">—</span></span>
-                                            <span id="damagePenaltyLabel{{ $v->id }}">Rp 0</span>
                                         </div>
                                         <div class="penalty-row total">
                                             <span>Total Penalty</span>
