@@ -53,8 +53,20 @@ class BookingController extends Controller
 
         $customers = Customer::all();
 
-        $rentedVehicles = Vehicle::with(['bookings.customer'])
-        ->whereHas('bookings', function ($q) use ($request) {
+        $rentedVehiclesQuery = Vehicle::with(['bookings.customer']);
+
+        if ($request->filled('search')) {
+            $rentedVehiclesQuery->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                ->orWhere('plate_number', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('type')) {
+            $rentedVehiclesQuery->where('type', $request->type);
+        }
+
+        $rentedVehicles = $rentedVehiclesQuery->whereHas('bookings', function ($q) use ($request) {
             if ($request->status === 'dp') {
                 $q->where('payment_status', 'paid')->where('payment_type', 'dp');
             } elseif ($request->status === 'paid') {
@@ -62,8 +74,7 @@ class BookingController extends Controller
             } else {
                 $q->where('payment_status', 'paid')->whereIn('payment_type', ['dp', 'full']);
             }
-        })
-        ->get();
+        })->get();
 
         return view('booking.index', compact('vehicles', 'customers', 'rentedVehicles'));
     }

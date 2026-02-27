@@ -160,34 +160,37 @@
 
     {{-- FILTER BAR --}}
     <form action="{{ route('booking.index') }}" method="GET" class="bk-filter">
-        <div class="row g-2 align-items-center justify-content-between">
-            <div class="col-md-8 d-flex gap-2">
-                <div class="input-group">
-                    <input type="text" name="search" class="form-control"
-                        placeholder="Search by name or plate…" value="{{ request('search') }}">
-                    <button type="submit" class="btn-search">
-                        <i class="fas fa-search me-1"></i> Search
-                    </button>
-                </div>
-                <select name="type" class="form-select" onchange="this.form.submit()" style="max-width:140px;">
-                    <option value="">All Types</option>
-                    <option value="scooter" {{ request('type') == 'scooter' ? 'selected' : '' }}>Scooter</option>
-                    <option value="sport"   {{ request('type') == 'sport'   ? 'selected' : '' }}>Sport</option>
-                    <option value="trail"   {{ request('type') == 'trail'   ? 'selected' : '' }}>Trail</option>
-                </select>
-            </div>
-            <div class="col-md-4 d-flex gap-2 justify-content-end align-items-center">
-                <select name="status" class="form-select" onchange="this.form.submit()" style="max-width:150px;">
-                    <option value="">All Status</option>
-                    <option value="dp"   {{ request('status') == 'dp'   ? 'selected' : '' }}>DP</option>
-                    <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
-                </select>
-                <button type="button" class="btn-add-rent" data-bs-toggle="modal" data-bs-target="#addRentModal">
-                    <i class="fas fa-plus"></i> Add Rent
-                </button>
-            </div>
+    <div class="d-flex gap-2 align-items-center">
+        <div class="input-group flex-grow-1">
+            <input type="text" name="search" id="searchInput" class="form-control"
+                placeholder="Search by name or plate…" value="{{ request('search') }}">
+            @if(request('search'))
+            <a href="{{ route('booking.index', request()->except('search')) }}"
+                class="btn btn-outline-secondary"
+                style="border-color:#e5e7eb;background:#fff;color:#6b7280;padding:8px 12px;">
+                <i class="fas fa-times"></i>
+            </a>
+            @endif
+            <button type="submit" class="btn-search">
+                <i class="fas fa-search me-1"></i> Search
+            </button>
         </div>
-    </form>
+        <select name="type" class="form-select" onchange="this.form.submit()" style="max-width:140px;">
+            <option value="">All Types</option>
+            <option value="scooter" {{ request('type') == 'scooter' ? 'selected' : '' }}>Scooter</option>
+            <option value="sport"   {{ request('type') == 'sport'   ? 'selected' : '' }}>Sport</option>
+            <option value="trail"   {{ request('type') == 'trail'   ? 'selected' : '' }}>Trail</option>
+        </select>
+        <select name="status" class="form-select" onchange="this.form.submit()" style="max-width:150px;">
+            <option value="">All Status</option>
+            <option value="dp"   {{ request('status') == 'dp'   ? 'selected' : '' }}>DP</option>
+            <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
+        </select>
+        <button type="button" class="btn-add-rent" data-bs-toggle="modal" data-bs-target="#addRentModal">
+            <i class="fas fa-plus"></i> Add Rent
+        </button>
+    </div>
+</form>
 
     {{-- ACTIVE RENTALS TABLE --}}
     @if($rentedVehicles->isEmpty())
