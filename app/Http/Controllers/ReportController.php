@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
@@ -14,10 +15,9 @@ class ReportController extends Controller
     | - Show report page with all bookings
     |--------------------------------------------------------------------------
     */
-    public function index()
+    public function index(Request $request)
     {
-        $bookings = $this->getBookings();
-
+        $bookings = $this->getBookings($request->get('sort', 'newest'));
         return view('reports.index', compact('bookings'));
     }
 
@@ -29,8 +29,7 @@ class ReportController extends Controller
     */
     public function downloadPdf()
     {
-        $bookings = $this->prepareImages($this->getBookings());
-
+        $bookings = $this->prepareImages($this->getAllBookings()); 
         return $this->generatePdf($bookings, 'Rental-Report-' . now()->format('d-m-Y') . '.pdf');
     }
 
@@ -53,7 +52,20 @@ class ReportController extends Controller
     | PRIVATE: GET BOOKINGS
     |--------------------------------------------------------------------------
     */
-    private function getBookings()
+    private function getBookings($sort = 'newest')
+    {
+        $query = Booking::with(['customer', 'vehicle', 'returnVehicle']);
+
+        if ($sort === 'oldest' || $sort === 'id_asc') {
+            $query->orderBy('id', 'asc');
+        } else {
+            $query->latest(); // newest (default)
+        }
+
+        return $query->paginate(10);
+    }
+
+    private function getAllBookings()
     {
         return Booking::with(['customer', 'vehicle', 'returnVehicle'])->latest()->get();
     }

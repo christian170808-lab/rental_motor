@@ -93,6 +93,18 @@ nav.d-flex p.small { display: none !important; }
     border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;
     padding: 4px 10px; font-size: 14px; cursor: pointer;
 }
+
+/* ─── PAGINATION ─── */
+.page-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid #e5e7eb; background: #fff;
+    color: #374151; font-size: 14px; font-weight: 500;
+    text-decoration: none; cursor: pointer; transition: all 0.2s;
+}
+.page-btn:hover:not([disabled]) { border-color: #3b82f6; color: #3b82f6; }
+.page-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.page-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -202,11 +214,31 @@ nav.d-flex p.small { display: none !important; }
 
         {{-- PAGINATION --}}
         @if($vehicles->hasPages() || $vehicles->total() > 0)
-        <div class="d-flex justify-content-between align-items-center px-4 py-3">
-            <div class="text-muted" style="font-size:13px;">
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted" style="font-size: 14px;">
                 Showing {{ $vehicles->firstItem() }} to {{ $vehicles->lastItem() }} of {{ $vehicles->total() }} results
+            </span>
+            <div class="d-flex gap-1">
+                @if($vehicles->onFirstPage())
+                    <button class="page-btn" disabled>&lsaquo;</button>
+                @else
+                    <a href="{{ $vehicles->appends(['page_returns' => request('page_returns')])->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                @endif
+
+                @for($page = 1; $page <= $vehicles->lastPage(); $page++)
+                    @if($page == $vehicles->currentPage())
+                        <button class="page-btn active">{{ $page }}</button>
+                    @else
+                        <a href="{{ $vehicles->appends(['page_returns' => request('page_returns')])->url($page) }}" class="page-btn">{{ $page }}</a>
+                    @endif
+                @endfor
+
+                @if($vehicles->hasMorePages())
+                    <a href="{{ $vehicles->appends(['page_returns' => request('page_returns')])->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                @else
+                    <button class="page-btn" disabled>&rsaquo;</button>
+                @endif
             </div>
-            <div>{{ $vehicles->appends(request()->query())->links('pagination::bootstrap-5') }}</div>
         </div>
         @endif
     </div>
@@ -267,10 +299,33 @@ nav.d-flex p.small { display: none !important; }
 
         {{-- PAGINATION --}}
         @if($returns->total() > 0 && $returns->lastPage() > 1)
-        <div class="d-flex justify-content-center py-3">
-            {{ $returns->links('pagination::bootstrap-5') }}
-        </div>
-        @endif
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted" style="font-size: 14px;">
+                Showing {{ $returns->firstItem() }} to {{ $returns->lastItem() }} of {{ $returns->total() }} results
+            </span>
+            <div class="d-flex gap-1">
+                @if($returns->onFirstPage())
+                    <button class="page-btn" disabled>&lsaquo;</button>
+                @else
+                    <a href="{{ $returns->appends(['page' => request('page')])->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                @endif
+
+                @for($page = 1; $page <= $returns->lastPage(); $page++)
+                    @if($page == $returns->currentPage())
+                        <button class="page-btn active">{{ $page }}</button>
+                    @else
+                        <a href="{{ $returns->appends(['page' => request('page')])->url($page) }}" class="page-btn">{{ $page }}</a>
+                    @endif
+                @endfor
+
+                @if($returns->hasMorePages())
+                    <a href="{{ $returns->appends(['page' => request('page')])->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                @else
+                    <button class="page-btn" disabled>&rsaquo;</button>
+                @endif
+                            </div>
+                        </div>
+                @endif
     </div>
 
     {{-- Hidden delete form --}}

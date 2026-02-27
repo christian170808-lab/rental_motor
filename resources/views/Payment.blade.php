@@ -82,6 +82,18 @@
 }
 .booking-modal-overlay.active { display: flex; }
 
+/* ─── PAGINATION ─── */
+.page-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid #e5e7eb; background: #fff;
+    color: #374151; font-size: 14px; font-weight: 500;
+    text-decoration: none; cursor: pointer; transition: all 0.2s;
+}
+.page-btn:hover:not([disabled]) { border-color: #3b82f6; color: #3b82f6; }
+.page-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.page-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
 @keyframes fadeOverlay { from { opacity: 0; } to { opacity: 1; } }
 
 .booking-modal {
@@ -165,7 +177,7 @@
                         $paymentType = optional($payment->booking)->payment_type ?? 'full';
                     @endphp
                     <tr>
-                        <td class="fw-semibold">{{ $index + 1 }}</td>
+                        <td class="fw-semibold">{{ ($payments->currentPage() - 1) * $payments->perPage() + $loop->iteration }}</td>
                         <td class="fw-semibold">{{ optional($payment->customer)->customer_name ?? '—' }}</td>
                         <td>
                             <span class="badge badge-custom" style="background-color: #e5e7eb; color: #6b7280;">
@@ -218,8 +230,34 @@
 
         {{-- PAGINATION --}}
         @if($payments->hasPages())
-        <div class="p-3 border-top d-flex justify-content-center">
-            {{ $payments->links('pagination::bootstrap-5') }}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted" style="font-size: 14px;">
+                Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }} of {{ $payments->total() }} results
+            </span>
+            <div class="d-flex gap-1">
+                {{-- Prev --}}
+                @if($payments->onFirstPage())
+                    <button class="page-btn" disabled>&lsaquo;</button>
+                @else
+                    <a href="{{ $payments->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                @endif
+
+                {{-- Page Numbers --}}
+                @foreach($payments->getUrlRange(1, $payments->lastPage()) as $page => $url)
+                    @if($page == $payments->currentPage())
+                        <button class="page-btn active">{{ $page }}</button>
+                    @else
+                        <a href="{{ $url }}" class="page-btn">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                {{-- Next --}}
+                @if($payments->hasMorePages())
+                    <a href="{{ $payments->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                @else
+                    <button class="page-btn" disabled>&rsaquo;</button>
+                @endif
+            </div>
         </div>
         @endif
     </div>

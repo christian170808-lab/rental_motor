@@ -16,15 +16,15 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $customers = Customer::query()
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('customer_name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone_number', 'like', "%{$search}%");
-                });
-            })
-            ->latest()
-            ->get();
+        ->when($request->search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customer_name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('phone_number', 'like', "%{$search}%");
+            });
+        })
+        ->latest()
+        ->paginate(10);
 
         return view('customers.index', compact('customers'));
     }

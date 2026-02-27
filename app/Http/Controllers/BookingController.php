@@ -27,29 +27,29 @@ class BookingController extends Controller
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('plate_number', 'like', '%' . $request->search . '%');
+                ->orWhere('plate_number', 'like', '%' . $request->search . '%');
             });
         }
 
         if ($request->filled('type')) {
-    $query->where('type', $request->type);
-    }
+            $query->where('type', $request->type);
+        }
 
-    if ($request->filled('status')) {
-        $query->whereHas('bookings', function ($q) use ($request) {
-            if ($request->status === 'dp') {
-                $q->where('payment_status', 'paid')->where('payment_type', 'dp');
-            } elseif ($request->status === 'paid') {
-                $q->where('payment_status', 'paid')->where('payment_type', 'full');
-            }
-        });
-    }
+        if ($request->filled('status')) {
+            $query->whereHas('bookings', function ($q) use ($request) {
+                if ($request->status === 'dp') {
+                    $q->where('payment_status', 'paid')->where('payment_type', 'dp');
+                } elseif ($request->status === 'paid') {
+                    $q->where('payment_status', 'paid')->where('payment_type', 'full');
+                }
+            });
+        }
 
         $vehicles = $query->orderByRaw("FIELD(status, 'rented', 'available')")
-                          ->orderByRaw("FIELD(type, 'scooter', 'sport', 'trail')")
-                          ->orderBy('price_per_day', 'asc')
-                          ->paginate(10)
-                          ->withQueryString();
+                        ->orderByRaw("FIELD(type, 'scooter', 'sport', 'trail')")
+                        ->orderBy('price_per_day', 'asc')
+                        ->paginate(10)
+                        ->withQueryString();
 
         $customers = Customer::all();
 
@@ -58,7 +58,12 @@ class BookingController extends Controller
         if ($request->filled('search')) {
             $rentedVehiclesQuery->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('plate_number', 'like', '%' . $request->search . '%');
+                ->orWhere('plate_number', 'like', '%' . $request->search . '%')
+                ->orWhere('type', 'like', '%' . $request->search . '%')
+                ->orWhereHas('bookings.customer', function ($cq) use ($request) {
+                    $cq->where('customer_name', 'like', '%' . $request->search . '%')
+                        ->orWhere('phone_number', 'like', '%' . $request->search . '%');
+                });
             });
         }
 
@@ -74,7 +79,7 @@ class BookingController extends Controller
             } else {
                 $q->where('payment_status', 'paid')->whereIn('payment_type', ['dp', 'full']);
             }
-        })->get();
+        })->paginate(10);
 
         return view('booking.index', compact('vehicles', 'customers', 'rentedVehicles'));
     }

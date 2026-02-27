@@ -143,6 +143,18 @@
     font-size: 13.5px; border-bottom: 1px solid #f1f5f9; text-align: center;
 }
 .modal-veh-table tbody tr:hover { background: #f0f7ff; }
+
+/* ─── PAGINATION ─── */
+.page-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid #e5e7eb; background: #fff;
+    color: #374151; font-size: 14px; font-weight: 500;
+    text-decoration: none; cursor: pointer; transition: all 0.2s;
+}
+.page-btn:hover:not([disabled]) { border-color: #3b82f6; color: #3b82f6; }
+.page-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.page-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -465,6 +477,36 @@
                     @endforeach
                 </tbody>
             </table>
+                                {{-- PAGINATION --}}
+                @if($rentedVehicles->hasPages())
+                <div class="p-3 border-top d-flex justify-content-between align-items-center" style="background:#fff;">
+                    <span class="text-muted" style="font-size: 14px;">
+                        Showing {{ $rentedVehicles->firstItem() }} to {{ $rentedVehicles->lastItem() }} of {{ $rentedVehicles->total() }} results
+                    </span>
+                    <div class="d-flex gap-1">
+                        @if($rentedVehicles->onFirstPage())
+                            <button class="page-btn" disabled>&lsaquo;</button>
+                        @else
+                            <a href="{{ $rentedVehicles->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                        @endif
+
+                        @for($page = 1; $page <= $rentedVehicles->lastPage(); $page++)
+                            @if($page == $rentedVehicles->currentPage())
+                                <button class="page-btn active">{{ $page }}</button>
+                            @else
+                                <a href="{{ $rentedVehicles->url($page) }}" class="page-btn">{{ $page }}</a>
+                            @endif
+                        @endfor
+
+                        @if($rentedVehicles->hasMorePages())
+                            <a href="{{ $rentedVehicles->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                        @else
+                            <button class="page-btn" disabled>&rsaquo;</button>
+                        @endif
+                    </div>
+                </div>
+                @endif
+            </div>
         </div>
     </div>
     @endif
@@ -576,11 +618,11 @@
                         </div>
                         <div class="col-12">
                             <label class="field-label">Start Date</label>
-                            <input type="date" name="start_date" id="rent-start-date" class="form-control" required>
+                            <input type="date" name="start_date" id="rent-start-date" class="form-control" min="{{ date('Y-m-d') }}" required>
                         </div>
                         <div class="col-12">
                             <label class="field-label">End Date</label>
-                            <input type="date" name="end_date" id="rent-end-date" class="form-control" required>
+                            <input type="date" name="end_date" id="rent-end-date" class="form-control" min="{{ date('Y-m-d') }}" required>
                         </div>
                         <div class="col-12">
                             <label class="field-label">Payment Method</label>
@@ -717,6 +759,11 @@ function updateCostSummary() {
     const start = document.getElementById('rent-start-date').value;
     const end   = document.getElementById('rent-end-date').value;
     const isDP  = document.getElementById('pay-dp').checked;
+
+    if (start) {
+        document.getElementById('rent-end-date').min = start;
+    }
+
     let days = 0, total = 0;
     if (start && end && end >= start) {
         days  = Math.floor((new Date(end) - new Date(start)) / 86400000) + 1;

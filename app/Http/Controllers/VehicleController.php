@@ -34,7 +34,7 @@ class VehicleController extends Controller
 
         $vehicles = $query->orderBy('type')->paginate(7);
 
-        $returns = ReturnVehicle::with('booking.vehicle')->latest()->paginate(5);
+        $returns = ReturnVehicle::with('booking.vehicle')->latest()->paginate(5, ['*'], 'page_returns');
 
         return view('vehicles.index', compact('vehicles', 'returns'));
     }
