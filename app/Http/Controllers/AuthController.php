@@ -8,60 +8,39 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW LOGIN PAGE
-    |--------------------------------------------------------------------------
-    */
     public function showLogin()
     {
         return view('auth.login');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PROCESS LOGIN
-    | - Validate credentials
-    | - Attempt login via Auth::attempt (auto hashes password)
-    | - Regenerate session for security
-    |--------------------------------------------------------------------------
-    */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $request->validate([
             'email'    => 'required|email',
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $request->session()->regenerate();
-
-            return redirect()
-                ->route('dashboard')
-                ->with('success', 'Welcome! Login successful.');
+            return redirect()->route('dashboard')->with('success', 'Welcome! Login successful.');
         }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return back()->withErrors(['email' => 'Email not found.'])->withInput();
+            /* Email tidak ditemukan — kosongkan email field, jangan withInput() */
+            return back()->withErrors(['email' => 'Email not found.']);
         }
 
-        return back()->withErrors(['password' => 'Incorrect password.'])->withInput();
+        /* Password salah — email tetap terisi, password sudah blank by default */
+        return back()->withErrors(['password' => 'Incorrect password.'])->withInput(['email' => $request->email]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOGOUT
-    | - Clear session and regenerate CSRF token
-    |--------------------------------------------------------------------------
-    */
     public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
         return redirect('/login');
     }
 }

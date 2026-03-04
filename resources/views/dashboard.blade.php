@@ -154,7 +154,7 @@
             </a>
         </div>
         <div class="col-md-3 col-sm-6 col-6">
-            <a href="{{ route('payments.index') }}" class="text-decoration-none">
+          <a href="{{ route('reports.index', ['view' => 'payment']) }}" class="text-decoration-none">
                 <div class="card stat-card">
                     <div class="card-body">
                         <div class="icon bg-info bg-opacity-10 text-info">

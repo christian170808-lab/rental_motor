@@ -10,21 +10,20 @@ class CustomerController extends Controller
     /*
     |--------------------------------------------------------------------------
     | INDEX
-    | - List all customers with optional search
     |--------------------------------------------------------------------------
     */
     public function index(Request $request)
     {
         $customers = Customer::query()
-        ->when($request->search, function ($query, $search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('customer_name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('phone_number', 'like', "%{$search}%");
-            });
-        })
-        ->latest()
-        ->paginate(10);
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('customer_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('phone_number', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10);
 
         return view('customers.index', compact('customers'));
     }
@@ -32,60 +31,75 @@ class CustomerController extends Controller
     /*
     |--------------------------------------------------------------------------
     | STORE
-    | - Validate and create a new customer with auto-generated customer_id
     |--------------------------------------------------------------------------
     */
     public function store(Request $request)
     {
         $validated = $this->validateCustomer($request);
 
+        $ktpName = null;
+        if ($request->hasFile('ktp_photo')) {
+            $file    = $request->file('ktp_photo');
+            $ktpName = time() . '_ktp_' . $file->getClientOriginalName();
+            $file->move(public_path('ktp'), $ktpName);
+        }
+
         Customer::create([
             ...$validated,
             'customer_id' => $this->generateCustomerId(),
+            'ktp_photo'   => $ktpName,
         ]);
 
-        return redirect()
-            ->route('customers.index')
-            ->with('success', 'Customer added successfully!');
+        return redirect()->route('customers.index')->with('success', 'Customer added successfully!');
     }
 
     /*
     |--------------------------------------------------------------------------
     | UPDATE
-    | - Validate and update existing customer data
     |--------------------------------------------------------------------------
     */
     public function update(Request $request, $id)
     {
+        $customer  = Customer::findOrFail($id);
         $validated = $this->validateCustomer($request, $id);
 
-        Customer::findOrFail($id)->update($validated);
+        if ($request->hasFile('ktp_photo')) {
+            // Hapus foto lama jika ada
+            if ($customer->ktp_photo && file_exists(public_path('ktp/' . $customer->ktp_photo))) {
+                unlink(public_path('ktp/' . $customer->ktp_photo));
+            }
+            $file    = $request->file('ktp_photo');
+            $ktpName = time() . '_ktp_' . $file->getClientOriginalName();
+            $file->move(public_path('ktp'), $ktpName);
+            $validated['ktp_photo'] = $ktpName;
+        }
 
-        return redirect()
-            ->route('customers.index')
-            ->with('success', 'Customer updated successfully!');
+        $customer->update($validated);
+
+        return redirect()->route('customers.index')->with('success', 'Customer updated successfully!');
     }
 
     /*
     |--------------------------------------------------------------------------
     | DESTROY
-    | - Delete a customer record
     |--------------------------------------------------------------------------
     */
     public function destroy($id)
     {
-        Customer::findOrFail($id)->delete();
+        $customer = Customer::findOrFail($id);
 
-        return redirect()
-            ->route('customers.index')
-            ->with('success', 'Customer deleted successfully!');
+        if ($customer->ktp_photo && file_exists(public_path('ktp/' . $customer->ktp_photo))) {
+            unlink(public_path('ktp/' . $customer->ktp_photo));
+        }
+
+        $customer->delete();
+
+        return redirect()->route('customers.index')->with('success', 'Customer deleted successfully!');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | PRIVATE: VALIDATE CUSTOMER
-    | - Reusable validation for store and update
-    | - Gmail only, unique email per customer
+    | PRIVATE: VALIDATE
     |--------------------------------------------------------------------------
     */
     private function validateCustomer(Request $request, $id = null)
@@ -93,27 +107,24 @@ class CustomerController extends Controller
         return $request->validate([
             'customer_name' => 'required|string|max:100',
             'email'         => [
-                'required',
-                'email',
-                'regex:/@gmail\.com$/',
+                'required', 'email', 'regex:/@gmail\.com$/',
                 "unique:customers,email,{$id}",
             ],
             'phone_number'  => 'required|string',
             'address'       => 'required|string|max:255',
+            'ktp_photo'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
     }
 
     /*
     |--------------------------------------------------------------------------
     | PRIVATE: GENERATE CUSTOMER ID
-    | - Format: CUST001, CUST002, ...
     |--------------------------------------------------------------------------
     */
     private function generateCustomerId()
     {
         $last   = Customer::latest('id')->first();
         $number = $last ? intval(substr($last->customer_id, 4)) + 1 : 1;
-
         return 'CUST' . str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 }

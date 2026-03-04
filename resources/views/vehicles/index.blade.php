@@ -19,6 +19,7 @@ nav.d-flex p.small { display: none !important; }
 .select2-dropdown { border-radius: 8px !important; border: 1px solid #e5e7eb !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important; font-size: 14px; }
 .select2-container--default .select2-search--dropdown .select2-search__field { border-radius: 6px !important; border: 1px solid #e5e7eb !important; padding: 6px 10px !important; font-size: 13px; }
 .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #1e40af !important; }
+.select2-results__option > div { width: 100% !important; box-sizing: border-box !important; overflow: hidden !important; }
 
 /* ─── PAGE HEADER ─── */
 .page-header {
@@ -71,7 +72,7 @@ nav.d-flex p.small { display: none !important; }
 }
 .btn-search:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,64,175,0.3); }
 
-/* ─── ADD BUTTON ─── */
+/* ─── BUTTONS ─── */
 .btn-add {
     background: linear-gradient(135deg, #1e3a8a, #1e40af); color: #fff; border: none;
     font-weight: 600; padding: 0.55rem 1.2rem; border-radius: 8px;
@@ -105,6 +106,17 @@ nav.d-flex p.small { display: none !important; }
 .page-btn:hover:not([disabled]) { border-color: #3b82f6; color: #3b82f6; }
 .page-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
 .page-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── TYPE SELECT + BUTTON ─── */
+.type-input-group { display: flex; gap: 8px; align-items: center; }
+.type-input-group .select2-filter { flex: 1; }
+.btn-add-type {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af); color: #fff; border: none;
+    font-weight: 600; width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(30,64,175,0.3); transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+}
+.btn-add-type:hover { transform: translateY(-1px); color: #fff; box-shadow: 0 4px 14px rgba(30,64,175,0.4); }
 </style>
 @endpush
 
@@ -133,9 +145,11 @@ nav.d-flex p.small { display: none !important; }
             <div class="select2-filter">
                 <select name="type" id="typeFilter" style="width:180px;">
                     <option value="">All Types</option>
-                    <option value="scooter" {{ request('type') == 'scooter' ? 'selected' : '' }}>🛵 Scooter</option>
-                    <option value="sport"   {{ request('type') == 'sport'   ? 'selected' : '' }}>🏍️ Sport</option>
-                    <option value="trail"   {{ request('type') == 'trail'   ? 'selected' : '' }}>🚵 Trail</option>
+                    @foreach($vehicleTypes as $vt)
+                    <option value="{{ $vt->name }}" {{ request('type') == $vt->name ? 'selected' : '' }}>
+                        {{ $vt->label }}
+                    </option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -167,11 +181,11 @@ nav.d-flex p.small { display: none !important; }
                         </td>
                         <td class="fw-semibold">{{ $v->name }}</td>
                         <td>
-                            @php $type = strtolower($v->type); @endphp
-                            @if($type == 'scooter') <span class="badge bg-info text-dark">Scooter</span>
-                            @elseif($type == 'sport') <span class="badge bg-danger">Sport</span>
-                            @elseif($type == 'trail') <span class="badge bg-success">Trail</span>
-                            @else <span class="badge bg-secondary">{{ ucfirst($v->type) }}</span>
+                            @php $vType = $vehicleTypes->firstWhere('name', strtolower($v->type)); @endphp
+                            @if($vType)
+                                <span class="badge bg-primary" style="font-size:12px;">{{ $vType->label }}</span>
+                            @else
+                                <span class="badge bg-secondary">{{ ucfirst($v->type) }}</span>
                             @endif
                         </td>
                         <td><code style="color:#1e40af;">{{ $v->plate_number }}</code></td>
@@ -189,17 +203,26 @@ nav.d-flex p.small { display: none !important; }
                                     data-id="{{ $v->id }}"
                                     data-name="{{ $v->name }}"
                                     data-type="{{ $v->type }}"
+                                    data-label="{{ optional($vehicleTypes->firstWhere('name', strtolower($v->type)))->label ?? ucfirst($v->type) }}"
                                     data-plate="{{ $v->plate_number }}"
                                     data-price="{{ $v->price_per_day }}"
                                     data-image="{{ $v->image ? asset('image/' . $v->image) : '' }}">
                                     <i class="fas fa-pen me-1"></i> Edit
                                 </button>
+                                @if($v->status === 'rented')
+                                <button type="button" class="btn btn-danger btn-sm disabled"
+                                    style="opacity:0.5;cursor:not-allowed;pointer-events:none;"
+                                    title="Cannot delete: vehicle is currently rented">
+                                    <i class="fas fa-lock me-1"></i> Delete
+                                </button>
+                                @else
                                 <button type="button" class="btn btn-danger btn-sm"
                                     data-bs-toggle="modal" data-bs-target="#deleteVehicleModal"
                                     data-id="{{ $v->id }}"
                                     data-name="{{ $v->name }}">
                                     <i class="fas fa-trash me-1"></i> Delete
                                 </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -212,8 +235,7 @@ nav.d-flex p.small { display: none !important; }
             </table>
         </div>
 
-        {{-- PAGINATION --}}
-        @if($vehicles->hasPages() || $vehicles->total() > 0)
+        @if($vehicles->hasPages())
         <div class="p-3 border-top d-flex justify-content-between align-items-center">
             <span class="text-muted" style="font-size: 14px;">
                 Showing {{ $vehicles->firstItem() }} to {{ $vehicles->lastItem() }} of {{ $vehicles->total() }} results
@@ -224,7 +246,6 @@ nav.d-flex p.small { display: none !important; }
                 @else
                     <a href="{{ $vehicles->appends(['page_returns' => request('page_returns')])->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
                 @endif
-
                 @for($page = 1; $page <= $vehicles->lastPage(); $page++)
                     @if($page == $vehicles->currentPage())
                         <button class="page-btn active">{{ $page }}</button>
@@ -232,7 +253,6 @@ nav.d-flex p.small { display: none !important; }
                         <a href="{{ $vehicles->appends(['page_returns' => request('page_returns')])->url($page) }}" class="page-btn">{{ $page }}</a>
                     @endif
                 @endfor
-
                 @if($vehicles->hasMorePages())
                     <a href="{{ $vehicles->appends(['page_returns' => request('page_returns')])->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
                 @else
@@ -296,8 +316,6 @@ nav.d-flex p.small { display: none !important; }
                 </tbody>
             </table>
         </div>
-
-        {{-- PAGINATION --}}
         @if($returns->total() > 0 && $returns->lastPage() > 1)
         <div class="p-3 border-top d-flex justify-content-between align-items-center">
             <span class="text-muted" style="font-size: 14px;">
@@ -309,7 +327,6 @@ nav.d-flex p.small { display: none !important; }
                 @else
                     <a href="{{ $returns->appends(['page' => request('page')])->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
                 @endif
-
                 @for($page = 1; $page <= $returns->lastPage(); $page++)
                     @if($page == $returns->currentPage())
                         <button class="page-btn active">{{ $page }}</button>
@@ -317,18 +334,16 @@ nav.d-flex p.small { display: none !important; }
                         <a href="{{ $returns->appends(['page' => request('page')])->url($page) }}" class="page-btn">{{ $page }}</a>
                     @endif
                 @endfor
-
                 @if($returns->hasMorePages())
                     <a href="{{ $returns->appends(['page' => request('page')])->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
                 @else
                     <button class="page-btn" disabled>&rsaquo;</button>
                 @endif
-                            </div>
-                        </div>
-                @endif
+            </div>
+        </div>
+        @endif
     </div>
 
-    {{-- Hidden delete form --}}
     <form id="deleteVehicleForm" method="POST" style="display:none;">
         @csrf @method('DELETE')
     </form>
@@ -357,12 +372,25 @@ nav.d-flex p.small { display: none !important; }
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Type</label>
-                        <select name="type" class="form-select" required>
-                            <option value="">— Select Type —</option>
-                            <option value="scooter" {{ old('type') == 'scooter' ? 'selected' : '' }}>Scooter</option>
-                            <option value="sport"   {{ old('type') == 'sport'   ? 'selected' : '' }}>Sport</option>
-                            <option value="trail"   {{ old('type') == 'trail'   ? 'selected' : '' }}>Trail</option>
-                        </select>
+                        <div class="type-input-group">
+                            <div class="select2-filter" style="flex:1;">
+                                <select name="type" id="addTypeSelect" class="form-select" required style="width:100%;">
+                                    <option value="">— Select Type —</option>
+                                    @foreach($vehicleTypes as $vt)
+                                    <option value="{{ $vt->name }}" data-type-id="{{ $vt->id }}"
+                                        data-count="{{ $vt->vehicles_count ?? 0 }}"
+                                        {{ old('type') == $vt->name ? 'selected' : '' }}>
+                                        {{ $vt->label }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="button" class="btn-add-type" title="Manage vehicle types"
+                                data-bs-toggle="modal" data-bs-target="#addTypeModal" data-from="add"
+                                style="width:auto;padding:0 14px;font-size:13px;gap:6px;">
+                                <i class="fas fa-tags me-1"></i> Manage Types
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Plate Number</label>
@@ -415,11 +443,21 @@ nav.d-flex p.small { display: none !important; }
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Type</label>
-                        <select name="type" id="ev-type" class="form-select" required>
-                            <option value="scooter">Scooter</option>
-                            <option value="sport">Sport</option>
-                            <option value="trail">Trail</option>
-                        </select>
+                        <div class="type-input-group">
+                            <div class="select2-filter" style="flex:1;">
+                                <select name="type" id="ev-type" class="form-select" required style="width:100%;">
+                                    @foreach($vehicleTypes as $vt)
+                                    <option value="{{ $vt->name }}" data-type-id="{{ $vt->id }}"
+                                        data-count="{{ $vt->vehicles_count ?? 0 }}">{{ $vt->label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="button" class="btn-add-type" title="Manage vehicle types"
+                                data-bs-toggle="modal" data-bs-target="#addTypeModal" data-from="edit"
+                                style="width:auto;padding:0 14px;font-size:13px;gap:6px;">
+                                <i class="fas fa-tags me-1"></i> Manage Types
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Plate Number</label>
@@ -478,30 +516,300 @@ nav.d-flex p.small { display: none !important; }
     </div>
 </div>
 
+{{-- ADD TYPE MODAL --}}
+<div class="modal fade" id="addTypeModal" tabindex="-1" style="z-index:1060;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+            <div class="modal-header-blue">
+                <h5 class="text-white fw-bold mb-0"><i class="fas fa-tags me-2"></i> Manage Types</h5>
+                <button type="button" class="modal-close-btn" id="btnCancelAddType"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body p-4">
+                {{-- Add new type --}}
+                <label class="form-label fw-semibold" style="color:#1e3a8a;">Add New Type</label>
+                <div class="d-flex gap-2 mb-1">
+                    <input type="text" id="newTypeLabelInput" class="form-control"
+                        placeholder="e.g. Cruiser, Adventure, Naked...">
+                    <button type="button" id="btnSaveNewType" class="btn fw-bold text-white px-3"
+                        style="background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;border-radius:10px;white-space:nowrap;">
+                        <i class="fas fa-plus me-1"></i> Add
+                    </button>
+                </div>
+                <div id="newTypeError" style="color:#dc2626;font-size:13px;display:none;" class="mb-2"></div>
+
+                <hr style="border-color:#e5e7eb;margin:14px 0;">
+
+                {{-- List existing types --}}
+                <label class="form-label fw-semibold mb-2" style="color:#1e3a8a;">Existing Types</label>
+                <div id="typeListPanel" style="max-height:200px;overflow-y:auto;"></div>
+
+                {{-- Back button --}}
+                <button type="button" id="btnCancelAddType2" class="btn btn-outline-secondary fw-semibold w-100 mt-3"
+                    style="border-radius:10px;padding:10px;">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- CONFIRM DELETE TYPE MODAL --}}
+<div class="modal fade" id="confirmDeleteTypeModal" tabindex="-1" style="z-index:1070;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+            <div style="background:linear-gradient(135deg,#991b1b,#dc2626);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+                <h5 class="text-white fw-bold mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Delete Type</h5>
+                <button type="button" class="modal-close-btn" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div style="width:64px;height:64px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class="fas fa-tags" style="font-size:26px;color:#ef4444;"></i>
+                </div>
+                <p class="fw-semibold mb-2" style="font-size:16px;">
+                    Delete type <span id="confirmTypeName" class="text-danger"></span>?
+                </p>
+                <div id="confirmTypeWarning" class="d-none mb-3 p-3 rounded-3 text-start"
+                    style="background:#fef2f2;border:1px solid #fecaca;font-size:13.5px;color:#991b1b;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong id="confirmTypeCount"></strong> vehicle(s) using this type will also be
+                    <strong>permanently deleted</strong> along with all their booking, payment, and return records.
+                </div>
+                <p class="text-muted mb-4" style="font-size:13px;">This action <strong>cannot be undone</strong>.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" id="btnDoConfirmDeleteType" class="btn fw-bold text-white px-4"
+                        style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:10px;padding:10px 24px;">
+                        <i class="fas fa-trash me-2"></i> Yes, Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-/* ─── Select2 type filter ─── */
+const CSRF_TOKEN = '{{ csrf_token() }}';
+let activeFrom = 'add'; // track dari modal mana tombol + ditekan
+
+/* ─── Helper: tutup addTypeModal, buka kembali modal asal ─── */
+function closeTypeModalAndReturn() {
+    const $addTypeModal = bootstrap.Modal.getInstance(document.getElementById('addTypeModal'));
+    if ($addTypeModal) $addTypeModal.hide();
+
+    setTimeout(function () {
+        const targetModalId = activeFrom === 'edit' ? 'editVehicleModal' : 'addVehicleModal';
+        const returnModal = new bootstrap.Modal(document.getElementById(targetModalId));
+        returnModal.show();
+    }, 300);
+}
+
+/* ─── Init Select2 biasa (tanpa tombol delete di dropdown) ─── */
+function initTypeSelect2(selector, parentId) {
+    $(selector).select2({
+        placeholder: '— Select Type —',
+        dropdownParent: $(parentId),
+    });
+}
+
+/* ─── Render daftar type di panel manage (di dalam addTypeModal) ─── */
+function renderTypeList(types) {
+    var html = '';
+    if (!types || types.length === 0) {
+        html = '<p class="text-muted fst-italic text-center mb-0" style="font-size:13px;">No types yet.</p>';
+    } else {
+        types.forEach(function(t) {
+            html +=
+                '<div class="d-flex align-items-center justify-content-between px-2 py-2 rounded mb-1" ' +
+                'style="background:#f8fafc;border:1px solid #e5e7eb;">' +
+                '<span style="font-size:14px;font-weight:500;">' + t.label + '</span>' +
+                '<button type="button" class="btn-do-delete-type btn btn-sm btn-danger" ' +
+                'data-id="' + t.id + '" data-name="' + t.label + '" data-count="' + (t.vehicles_count||0) + '" ' +
+                'style="padding:2px 10px;font-size:12px;border-radius:6px;">' +
+                '<i class="fas fa-trash me-1"></i>Delete</button>' +
+                '</div>';
+        });
+    }
+    $('#typeListPanel').html(html);
+}
+
+/* ─── Load type list dari server ─── */
+function loadTypeList() {
+    fetch('/vehicle-types/list', { headers: { 'Accept': 'application/json' } })
+    .then(r => r.json())
+    .then(data => renderTypeList(data))
+    .catch(() => {});
+}
+
+/* ─── Delete type dari panel ─── */
+let pendingDeleteTypeId   = null;
+let pendingDeleteTypeName = null;
+let pendingDeleteTypeCount = 0;
+
+$(document).on('click', '.btn-do-delete-type', function () {
+    pendingDeleteTypeId    = $(this).data('id');
+    pendingDeleteTypeName  = $(this).data('name');
+    pendingDeleteTypeCount = parseInt($(this).data('count')) || 0;
+
+    $('#confirmTypeName').text('"' + pendingDeleteTypeName + '"');
+
+    if (pendingDeleteTypeCount > 0) {
+        $('#confirmTypeCount').text(pendingDeleteTypeCount);
+        $('#confirmTypeWarning').removeClass('d-none');
+    } else {
+        $('#confirmTypeWarning').addClass('d-none');
+    }
+
+    /* Sembunyikan dulu manage types modal, lalu tampil konfirmasi */
+    bootstrap.Modal.getInstance(document.getElementById('addTypeModal'))?.hide();
+    setTimeout(function () {
+        new bootstrap.Modal(document.getElementById('confirmDeleteTypeModal')).show();
+    }, 300);
+});
+
+/* ─── Kalau confirm delete modal ditutup tanpa delete → kembali ke Manage Types ─── */
+document.getElementById('confirmDeleteTypeModal').addEventListener('hide.bs.modal', function () {
+    /* Hanya balik kalau bukan karena tombol Yes Delete diklik */
+    if (pendingDeleteTypeId !== null) {
+        setTimeout(function () {
+            new bootstrap.Modal(document.getElementById('addTypeModal')).show();
+        }, 300);
+    }
+});
+
+$('#btnDoConfirmDeleteType').on('click', function () {
+    var id    = pendingDeleteTypeId;
+    var count = pendingDeleteTypeCount;
+    pendingDeleteTypeId = null; /* tandai bahwa ini genuine delete, bukan cancel */
+
+    bootstrap.Modal.getInstance(document.getElementById('confirmDeleteTypeModal'))?.hide();
+
+    fetch('/vehicle-types/' + id, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+    .then(({ ok, data }) => {
+        if (!ok) { alert(data.error || 'Failed to delete type.'); return; }
+        $('#addTypeSelect option[value="' + data.name + '"]').remove();
+        $('#ev-type option[value="' + data.name + '"]').remove();
+        $('#typeFilter option[value="' + data.name + '"]').remove();
+        $('#addTypeSelect').trigger('change.select2');
+        $('#ev-type').trigger('change.select2');
+        if (count > 0) {
+            setTimeout(() => window.location.reload(), 200);
+        } else {
+            loadTypeList();
+            /* Kembali ke manage types modal */
+            setTimeout(function () {
+                new bootstrap.Modal(document.getElementById('addTypeModal')).show();
+            }, 300);
+        }
+    })
+    .catch(() => alert('Network error.'));
+});
+
 $(document).ready(function () {
+
+    /* ─── Select2 filter (search bar) ─── */
     $('#typeFilter').select2({
         placeholder: 'All Types', allowClear: true,
         minimumResultsForSearch: 0, dropdownParent: $('body'),
     }).on('change', function () { document.getElementById('filterForm').submit(); });
-});
+
+    /* ─── Select2 Add & Edit modal dengan tombol delete di tiap option ─── */
+    initTypeSelect2('#addTypeSelect', '#addVehicleModal');
+    initTypeSelect2('#ev-type', '#editVehicleModal');
+
+    /* ─── Track dari modal mana tombol + ditekan, load type list ─── */
+    $('[data-bs-target="#addTypeModal"]').on('click', function () {
+        activeFrom = $(this).data('from');
+        $('#newTypeLabelInput').val('');
+        $('#newTypeError').hide().text('');
+        loadTypeList();
+    });
+
+    /* ─── Cancel / X di modal Add Type → kembali ke modal asal ─── */
+    $('#btnCancelAddType, #btnCancelAddType2').on('click', function () {
+        closeTypeModalAndReturn();
+    });
+
+    /* ─── Simpan type baru via AJAX ─── */
+    $('#btnSaveNewType').on('click', function () {
+        const label = $('#newTypeLabelInput').val().trim();
+        if (!label) {
+            $('#newTypeError').text('Type name cannot be empty.').show();
+            return;
+        }
+
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Saving...');
+
+        fetch('/vehicle-types', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ label: label })
+        })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok) {
+                $('#newTypeError').text(data.error || 'Failed to save type.').show();
+                return;
+            }
+
+            /* Tambah option ke semua select type */
+            const $newOptAdd  = $('<option>', { value: data.name, text: data.label, 'data-type-id': data.id });
+            const $newOptEdit = $('<option>', { value: data.name, text: data.label, 'data-type-id': data.id });
+            $('#addTypeSelect').append($newOptAdd);
+            $('#ev-type').append($newOptEdit);
+
+            /* Langsung pilih di select yang aktif */
+            const targetSelect = activeFrom === 'edit' ? '#ev-type' : '#addTypeSelect';
+            $(targetSelect).val(data.name).trigger('change');
+
+            /* Tutup modal add type, kembali ke modal asal */
+            closeTypeModalAndReturn();
+        })
+        .catch(() => $('#newTypeError').text('Network error.').show())
+        .finally(() => {
+            $btn.prop('disabled', false).html('<i class="fas fa-save me-2"></i> Save Type');
+        });
+    });
+
+    /* ─── Enter key di input type ─── */
+    $('#newTypeLabelInput').on('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('#btnSaveNewType').trigger('click'); }
+    });
+
+}); // ← tutup $(document).ready
 
 /* ─── Edit vehicle modal ─── */
 document.getElementById('editVehicleModal').addEventListener('show.bs.modal', function (e) {
     const btn = e.relatedTarget;
     document.getElementById('editVehicleForm').action = '/vehicles/' + btn.dataset.id;
     document.getElementById('ev-name').value          = btn.dataset.name;
-    document.getElementById('ev-type').value          = btn.dataset.type;
     document.getElementById('ev-plate').value         = btn.dataset.plate;
     document.getElementById('ev-price').value         = btn.dataset.price;
     document.getElementById('ev-plate-error').style.display = 'none';
     document.getElementById('ev-plate').style.borderColor   = '';
+
+    var typeVal   = btn.dataset.type;
+    var typeLabel = btn.dataset.label;
+    var $evType   = $('#ev-type');
+    if ($evType.find('option[value="' + typeVal + '"]').length === 0) {
+        $evType.append(new Option(typeLabel, typeVal, true, true));
+    } else {
+        $evType.val(typeVal);
+    }
+    $evType.trigger('change');
+
     const preview = document.getElementById('ev-image-preview');
     preview.innerHTML = btn.dataset.image
         ? `<img src="${btn.dataset.image}" style="width:100px;border-radius:8px;border:1px solid #e5e7eb;">`
@@ -514,51 +822,60 @@ document.getElementById('deleteVehicleModal').addEventListener('show.bs.modal', 
     document.getElementById('delete-vehicle-name').textContent = btn.dataset.name;
     document.getElementById('deleteVehicleForm').action        = '/vehicles/' + btn.dataset.id;
 });
-
 document.getElementById('btn-confirm-delete').addEventListener('click', function () {
     document.getElementById('deleteVehicleForm').submit();
 });
 
-/* ─── Plate number validation ─── */
-function autoFormatPlate(inputId, errorId) {
+/* ─── Plate number: auto format saja saat input, tanpa error/merah ─── */
+function autoFormatPlate(inputId) {
     document.getElementById(inputId).addEventListener('input', function () {
         let val = this.value.toUpperCase().replace(/\s+/g, '');
-
-        // Auto insert spaces: letters, then digits, then letters
-        let formatted = '';
-        let i = 0;
-
-        // Part 1: leading letters (max 3)
+        let formatted = '', i = 0;
         let part1 = '';
-        while (i < val.length && /[A-Z]/.test(val[i]) && part1.length < 3) {
-            part1 += val[i++];
-        }
+        while (i < val.length && /[A-Z]/.test(val[i]) && part1.length < 3) part1 += val[i++];
         formatted = part1;
-
-        // Part 2: digits (max 4)
         let part2 = '';
-        while (i < val.length && /\d/.test(val[i]) && part2.length < 4) {
-            part2 += val[i++];
-        }
+        while (i < val.length && /\d/.test(val[i]) && part2.length < 4) part2 += val[i++];
         if (part2) formatted += ' ' + part2;
-
-        // Part 3: trailing letters (max 3)
         let part3 = '';
-        while (i < val.length && /[A-Z]/.test(val[i]) && part3.length < 3) {
-            part3 += val[i++];
-        }
+        while (i < val.length && /[A-Z]/.test(val[i]) && part3.length < 3) part3 += val[i++];
         if (part3) formatted += ' ' + part3;
-
         this.value = formatted;
-
-        const valid = /^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(formatted);
-        const errEl = document.getElementById(errorId);
-        errEl.style.display    = formatted.length > 0 && !valid ? 'block' : 'none';
-        this.style.borderColor = formatted.length > 0 && !valid ? '#dc2626' : '';
+        /* Reset error & border saat user mengetik */
+        document.getElementById(inputId === 'addPlateInput' ? 'add-plate-error' : 'ev-plate-error').style.display = 'none';
+        this.style.borderColor = '';
     });
 }
-autoFormatPlate('ev-plate', 'ev-plate-error');
-autoFormatPlate('addPlateInput', 'add-plate-error');
+autoFormatPlate('ev-plate');
+autoFormatPlate('addPlateInput');
+
+/* ─── Validasi plate saat klik Save Vehicle (Add) ─── */
+document.querySelector('#addVehicleModal form').addEventListener('submit', function (e) {
+    const input = document.getElementById('addPlateInput');
+    const errEl = document.getElementById('add-plate-error');
+    const valid = /^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(input.value.trim());
+    if (!valid) {
+        e.preventDefault();
+        errEl.style.display = 'block';
+        input.focus();
+    } else {
+        errEl.style.display = 'none';
+    }
+});
+
+/* ─── Validasi plate saat klik Save Changes (Edit) ─── */
+document.getElementById('editVehicleForm').addEventListener('submit', function (e) {
+    const input = document.getElementById('ev-plate');
+    const errEl = document.getElementById('ev-plate-error');
+    const valid = /^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(input.value.trim());
+    if (!valid) {
+        e.preventDefault();
+        errEl.style.display = 'block';
+        input.focus();
+    } else {
+        errEl.style.display = 'none';
+    }
+});
 
 /* ─── Image preview (edit) ─── */
 document.querySelector('#editVehicleModal input[name="image"]').addEventListener('change', function () {

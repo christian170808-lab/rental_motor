@@ -2,7 +2,6 @@
 
 @push('styles')
 <style>
-/* ─── PAGE HEADER ─── */
 .page-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #1d4ed8 100%);
     border-radius: 16px; padding: 22px 28px; margin-bottom: 20px;
@@ -11,7 +10,6 @@
 .page-header h2 { color: #fff; font-weight: 700; margin: 0; font-size: 1.5rem; }
 .page-header p  { color: rgba(255,255,255,0.7); margin: 4px 0 0; font-size: 0.9rem; }
 
-/* ─── TABLE CARD ─── */
 .table-card {
     background: #fff; border-radius: 14px; overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.07); border: 1px solid #e5e7eb;
@@ -24,7 +22,6 @@
 .table-card td { vertical-align: middle; font-size: 14px; padding: 13px 16px; text-align: center; }
 .table-card tbody tr:hover { background: #eff6ff; }
 
-/* ─── SEARCH BAR ─── */
 .search-box input { border-radius: 8px 0 0 8px; padding: 10px 14px; }
 .search-box button {
     border-radius: 0 8px 8px 0;
@@ -32,7 +29,6 @@
     color: #fff; font-weight: 600; border: none;
 }
 
-/* ─── MODAL HEADER ─── */
 .modal-header-blue {
     background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
     padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;
@@ -47,7 +43,36 @@
     border-radius: 8px; padding: 4px 10px; font-size: 14px; cursor: pointer;
 }
 
-/* ─── PAGINATION ─── */
+.ktp-thumb {
+    width: 72px; height: 46px; object-fit: cover;
+    border-radius: 6px; border: 1px solid #e5e7eb;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+}
+.ktp-thumb:hover { transform: scale(1.06); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+#ktpLightbox {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.78); align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+}
+#ktpLightbox.show { display: flex; }
+#ktpLightbox img { max-width: 88vw; max-height: 82vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+#ktpLightbox button {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    color: #fff; border-radius: 8px; padding: 8px 20px; font-size: 14px; cursor: pointer;
+}
+#ktpLightbox button:hover { background: rgba(255,255,255,0.25); }
+
+.ktp-preview-box {
+    width: 100%; height: 130px; border: 2px dashed #cbd5e1; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; background: #f8fafc; cursor: pointer; transition: border-color 0.2s;
+}
+.ktp-preview-box:hover { border-color: #3b82f6; }
+.ktp-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+.ktp-preview-box .ktp-placeholder { text-align: center; color: #94a3b8; font-size: 13px; pointer-events: none; }
+.ktp-preview-box .ktp-placeholder i { font-size: 28px; display: block; margin-bottom: 6px; }
+
 .page-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 36px; height: 36px; border-radius: 8px;
@@ -64,13 +89,11 @@
 @section('content')
 <div class="container mt-4" style="max-width:1200px;">
 
-    {{-- PAGE HEADER --}}
     <div class="page-header">
         <h2><i class="fas fa-users me-2"></i> Customer List</h2>
         <p>Manage all registered customers</p>
     </div>
 
-    {{-- TOOLBAR --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
         <form method="GET" action="{{ route('customers.index') }}" class="search-box w-50">
             <div class="input-group">
@@ -79,19 +102,19 @@
                 <button type="submit" class="btn px-4">Search</button>
             </div>
         </form>
-        <button type="button" class="btn text-white fw-600"
+        <button type="button" class="btn text-white"
             data-bs-toggle="modal" data-bs-target="#addModal"
             style="background:linear-gradient(135deg,#1e3a8a,#1e40af);font-weight:600;border-radius:8px;padding:9px 20px;">
             <i class="fas fa-plus me-1"></i> Add Customer
         </button>
     </div>
 
-    {{-- CUSTOMERS TABLE --}}
     <div class="table-card">
         <table class="table mb-0">
             <thead>
                 <tr>
                     <th>No</th>
+                    <th>ID Card</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
@@ -102,7 +125,17 @@
             <tbody>
                 @forelse($customers as $customer)
                 <tr>
-                    <td>{{ $loop->iteration }}</td>
+                    <td>{{ $customers->firstItem() + $loop->index }}</td>
+                    <td>
+                        @if($customer->ktp_photo)
+                            <img src="{{ asset('ktp/' . $customer->ktp_photo) }}"
+                                 class="ktp-thumb"
+                                 onclick="openKtp('{{ asset('ktp/' . $customer->ktp_photo) }}')"
+                                 title="Click to view ID Card">
+                        @else
+                            <span class="text-muted" style="font-size:12px;">—</span>
+                        @endif
+                    </td>
                     <td class="fw-semibold">{{ $customer->customer_name }}</td>
                     <td>{{ $customer->email }}</td>
                     <td>{{ $customer->phone_number }}</td>
@@ -115,7 +148,8 @@
                                 data-name="{{ $customer->customer_name }}"
                                 data-email="{{ $customer->email }}"
                                 data-phone="{{ $customer->phone_number }}"
-                                data-address="{{ $customer->address }}">
+                                data-address="{{ $customer->address }}"
+                                data-ktp="{{ $customer->ktp_photo ? asset('ktp/' . $customer->ktp_photo) : '' }}">
                                 <i class="fas fa-pen me-1"></i> Edit
                             </button>
                             <button type="button" class="btn btn-sm btn-danger"
@@ -129,45 +163,45 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-muted fst-italic">
-                        No customers found.
-                    </td>
+                    <td colspan="7" class="text-center py-5 text-muted fst-italic">No customers found.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
-            {{-- PAGINATION --}}
-            @if($customers->hasPages())
-            <div class="p-3 border-top d-flex justify-content-between align-items-center">
-                <span class="text-muted" style="font-size: 14px;">
-                    Showing {{ $customers->firstItem() }} to {{ $customers->lastItem() }} of {{ $customers->total() }} results
-                </span>
-                <div class="d-flex gap-1">
-                    @if($customers->onFirstPage())
-                        <button class="page-btn" disabled>&lsaquo;</button>
-                    @else
-                        <a href="{{ $customers->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
-                    @endif
 
-                    @for($page = 1; $page <= $customers->lastPage(); $page++)
-                        @if($page == $customers->currentPage())
-                            <button class="page-btn active">{{ $page }}</button>
-                        @else
-                            <a href="{{ $customers->url($page) }}" class="page-btn">{{ $page }}</a>
-                        @endif
-                    @endfor
-
-                    @if($customers->hasMorePages())
-                        <a href="{{ $customers->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+        @if($customers->hasPages())
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted" style="font-size:14px;">
+                Showing {{ $customers->firstItem() }} to {{ $customers->lastItem() }} of {{ $customers->total() }} results
+            </span>
+            <div class="d-flex gap-1">
+                @if($customers->onFirstPage())
+                    <button class="page-btn" disabled>&lsaquo;</button>
+                @else
+                    <a href="{{ $customers->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                @endif
+                @for($page = 1; $page <= $customers->lastPage(); $page++)
+                    @if($page == $customers->currentPage())
+                        <button class="page-btn active">{{ $page }}</button>
                     @else
-                        <button class="page-btn" disabled>&rsaquo;</button>
+                        <a href="{{ $customers->url($page) }}" class="page-btn">{{ $page }}</a>
                     @endif
-                </div>
+                @endfor
+                @if($customers->hasMorePages())
+                    <a href="{{ $customers->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                @else
+                    <button class="page-btn" disabled>&rsaquo;</button>
+                @endif
             </div>
-            @endif
         </div>
+        @endif
     </div>
+</div>
 
+{{-- KTP LIGHTBOX --}}
+<div id="ktpLightbox" onclick="closeKtp()">
+    <img id="ktpLightboxImg" src="" alt="ID Card">
+    <button onclick="event.stopPropagation(); closeKtp()"><i class="fas fa-times me-1"></i> Close</button>
 </div>
 
 {{-- ADD MODAL --}}
@@ -184,7 +218,7 @@
                     <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                 </div>
                 @endif
-                <form action="{{ route('customers.store') }}" method="POST">
+                <form action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data" id="addCustomerForm">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Customer Name</label>
@@ -207,9 +241,26 @@
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                required>
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Address</label>
-                        <textarea name="address" class="form-control" rows="3" placeholder="Enter address…" required>{{ old('address') }}</textarea>
+                        <textarea name="address" class="form-control" rows="2" placeholder="Enter address…" required>{{ old('address') }}</textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" style="color:#1e3a8a;">ID Card Photo <span class="text-danger">*</span></label>
+                        <div class="ktp-preview-box" id="addKtpBox" onclick="document.getElementById('addKtpInput').click()">
+                            <div class="ktp-placeholder" id="addKtpPlaceholder">
+                                <i class="fas fa-id-card"></i>
+                                Click to upload ID Card photo
+                                <div style="font-size:11px;margin-top:4px;color:#b0bec5;">JPG, PNG, WEBP — max 2MB</div>
+                            </div>
+                            <img id="addKtpPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
+                        </div>
+                        <input type="file" name="ktp_photo" id="addKtpInput"
+                               accept="image/jpg,image/jpeg,image/png,image/webp"
+                               style="display:none;">
+                        <div id="addKtpError" style="color:#dc2626;font-size:12.5px;margin-top:5px;display:none;">
+                            <i class="fas fa-exclamation-circle me-1"></i> ID Card photo is required.
+                        </div>
                     </div>
                     <button type="submit" class="btn w-100 fw-bold text-white"
                         style="background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;border-radius:10px;padding:12px;">
@@ -230,7 +281,7 @@
                 <button type="button" class="modal-close-btn" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body p-4">
-                <form id="editForm" method="POST">
+                <form id="editForm" method="POST" enctype="multipart/form-data">
                     @csrf @method('PUT')
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Customer Name</label>
@@ -251,9 +302,24 @@
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                required>
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Address</label>
-                        <textarea name="address" id="edit-address" class="form-control" rows="3" required></textarea>
+                        <textarea name="address" id="edit-address" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" style="color:#1e3a8a;">ID Card Photo</label>
+                        <div class="ktp-preview-box" id="editKtpBox" onclick="document.getElementById('editKtpInput').click()">
+                            <div class="ktp-placeholder" id="editKtpPlaceholder">
+                                <i class="fas fa-id-card"></i>
+                                Click to change ID Card photo
+                                <div style="font-size:11px;margin-top:4px;color:#b0bec5;">Leave unchanged to keep current</div>
+                            </div>
+                            <img id="editKtpPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
+                        </div>
+                        <input type="file" name="ktp_photo" id="editKtpInput"
+                               accept="image/jpg,image/jpeg,image/png,image/webp"
+                               style="display:none;">
+                        <small class="text-muted">Leave blank to keep current ID Card photo</small>
                     </div>
                     <button type="submit" class="btn w-100 fw-bold text-white"
                         style="background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;border-radius:10px;padding:12px;">
@@ -301,6 +367,62 @@
 
 @push('scripts')
 <script>
+/* ─── Lightbox ─── */
+function openKtp(src) {
+    document.getElementById('ktpLightboxImg').src = src;
+    document.getElementById('ktpLightbox').classList.add('show');
+}
+function closeKtp() {
+    document.getElementById('ktpLightbox').classList.remove('show');
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeKtp(); });
+
+/* ─── KTP Preview helper ─── */
+function setupKtpPreview(inputId, previewId, placeholderId) {
+    document.getElementById(inputId).addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Maximum file size is 2MB!');
+            this.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById(previewId);
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById(placeholderId).style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+setupKtpPreview('addKtpInput', 'addKtpPreview', 'addKtpPlaceholder');
+setupKtpPreview('editKtpInput', 'editKtpPreview', 'editKtpPlaceholder');
+
+/* ─── Reset error saat file dipilih ─── */
+document.getElementById('addKtpInput').addEventListener('change', function () {
+    if (this.files.length > 0) {
+        document.getElementById('addKtpError').style.display = 'none';
+        document.getElementById('addKtpBox').style.borderColor = '';
+    }
+});
+
+/* ─── Validasi: ID Card wajib di Add ─── */
+document.getElementById('addCustomerForm').addEventListener('submit', function (e) {
+    const input = document.getElementById('addKtpInput');
+    const errEl = document.getElementById('addKtpError');
+    const box   = document.getElementById('addKtpBox');
+    if (!input.files || input.files.length === 0) {
+        e.preventDefault();
+        errEl.style.display = 'block';
+        box.style.borderColor = '#ef4444';
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+/* ─── Edit modal populate ─── */
 document.getElementById('editModal').addEventListener('show.bs.modal', function (e) {
     const btn = e.relatedTarget;
     document.getElementById('editForm').action    = '/customers/' + btn.dataset.id;
@@ -308,8 +430,23 @@ document.getElementById('editModal').addEventListener('show.bs.modal', function 
     document.getElementById('edit-email').value   = btn.dataset.email;
     document.getElementById('edit-phone').value   = btn.dataset.phone;
     document.getElementById('edit-address').value = btn.dataset.address ?? '';
+
+    const ktpUrl      = btn.dataset.ktp;
+    const preview     = document.getElementById('editKtpPreview');
+    const placeholder = document.getElementById('editKtpPlaceholder');
+    if (ktpUrl) {
+        preview.src           = ktpUrl;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        preview.src           = '';
+        preview.style.display = 'none';
+        placeholder.style.display = 'block';
+    }
+    document.getElementById('editKtpInput').value = '';
 });
 
+/* ─── Delete modal ─── */
 document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
     const btn = e.relatedTarget;
     document.getElementById('delete-customer-name').textContent = btn.dataset.name;

@@ -4,22 +4,19 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AdminController;
 
-/*
-|--------------------------------------------------------------------------
-| ROOT
-|--------------------------------------------------------------------------
-*/
 Route::redirect('/', '/login');
 
 /*
 |--------------------------------------------------------------------------
-| AUTH ROUTES (public)
+| AUTH
 |--------------------------------------------------------------------------
 */
 Route::controller(AuthController::class)->group(function () {
@@ -30,7 +27,7 @@ Route::controller(AuthController::class)->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES (requires auth)
+| PROTECTED
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
@@ -47,7 +44,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('/vehicles/{id}', 'destroy')->name('vehicles.destroy');
     });
 
-    // Booking — vehicles-json must be defined BEFORE prefix group to avoid conflict
+    // Vehicle Types
+    Route::prefix('vehicle-types')->name('vehicle-types.')->group(function () {
+        Route::get('/list',    [VehicleController::class, 'typeList'])   ->name('list');
+        Route::get('/',        [VehicleController::class, 'typeIndex'])  ->name('index');
+        Route::post('/',       [VehicleController::class, 'typeStore'])  ->name('store');
+        Route::delete('/{id}', [VehicleController::class, 'typeDestroy'])->name('destroy');
+    });
+
+    // Booking
     Route::get('/booking/vehicles-json', [BookingController::class, 'vehiclesJson'])->name('booking.vehicles.json');
 
     Route::prefix('booking')->controller(BookingController::class)->group(function () {
@@ -86,6 +91,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/',         'index')->name('reports.index');
         Route::get('/pdf',      'downloadPdf')->name('reports.pdf');
         Route::get('/{id}/pdf', 'downloadSinglePdf')->name('reports.pdf.single');
+    });
+
+    // Admin
+    Route::controller(AdminController::class)->group(function () {
+        Route::get('/admin',         'index')->name('admin.index');
+        Route::post('/admin',        'store')->name('admin.store');
+        Route::put('/admin/{id}',    'update')->name('admin.update');
+        Route::delete('/admin/{id}', 'destroy')->name('admin.destroy');
     });
 
 });

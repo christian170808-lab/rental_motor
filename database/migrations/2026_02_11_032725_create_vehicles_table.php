@@ -28,3 +28,20 @@ return new class extends Migration
         Schema::dropIfExists('vehicles');
     }
 };
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('vehicle_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('label');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('vehicle_types');
+    }
+};

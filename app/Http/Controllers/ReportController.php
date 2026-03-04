@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Payment;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,13 +13,17 @@ class ReportController extends Controller
     /*
     |--------------------------------------------------------------------------
     | INDEX
-    | - Show report page with all bookings
+    | - Show report page with bookings and payments
     |--------------------------------------------------------------------------
     */
     public function index(Request $request)
     {
-        $bookings = $this->getBookings($request->get('sort', 'newest'));
-        return view('reports.index', compact('bookings'));
+        $bookings          = $this->getBookings($request->get('sort', 'newest'));
+        $payments          = Payment::with(['customer', 'vehicle'])->latest()->get();
+        $totalRevenue      = Payment::where('status', 'completed')->sum('total_price');
+        $totalTransactions = Payment::whereIn('status', ['paid', 'completed'])->count();
+
+        return view('reports.index', compact('bookings', 'payments', 'totalRevenue', 'totalTransactions'));
     }
 
     /*
@@ -29,7 +34,7 @@ class ReportController extends Controller
     */
     public function downloadPdf()
     {
-        $bookings = $this->prepareImages($this->getAllBookings()); 
+        $bookings = $this->prepareImages($this->getAllBookings());
         return $this->generatePdf($bookings, 'Rental-Report-' . now()->format('d-m-Y') . '.pdf');
     }
 
@@ -59,7 +64,7 @@ class ReportController extends Controller
         if ($sort === 'oldest' || $sort === 'id_asc') {
             $query->orderBy('id', 'asc');
         } else {
-            $query->latest(); // newest (default)
+            $query->latest();
         }
 
         return $query->paginate(10);
@@ -73,7 +78,6 @@ class ReportController extends Controller
     /*
     |--------------------------------------------------------------------------
     | PRIVATE: PREPARE IMAGES
-    | - Convert stored images to base64 data URIs for PDF rendering
     |--------------------------------------------------------------------------
     */
     private function prepareImages($bookings)

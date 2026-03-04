@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Vehicle extends Model
 {
@@ -52,5 +53,13 @@ class Vehicle extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class, 'vehicle_id', 'id');
+    }
+
+    /**
+     * Type kendaraan dari tabel vehicle_types
+     */
+    public function vehicleType(): BelongsTo
+    {
+        return $this->belongsTo(VehicleType::class, 'type', 'name');
     }
 }
