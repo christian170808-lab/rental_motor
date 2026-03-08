@@ -21,6 +21,20 @@ nav.d-flex p.small { display: none !important; }
 .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #1e40af !important; }
 .select2-results__option > div { width: 100% !important; box-sizing: border-box !important; overflow: hidden !important; }
 
+@keyframes popIn {
+    0%   { opacity: 0; transform: scale(.85) translateY(-20px); }
+    70%  { transform: scale(1.03) translateY(2px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal.show .modal-dialog     { animation: popIn .32s cubic-bezier(.34, 1.56, .64, 1) both; }
+.modal.show .modal-header-blue,
+.modal.show .modal-header-red { animation: slideDown .28s ease both .05s; }
+.modal-content                { border: none; border-radius: 16px !important; overflow: hidden; }
 /* ─── PAGE HEADER ─── */
 .page-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #1d4ed8 100%);
@@ -117,6 +131,48 @@ nav.d-flex p.small { display: none !important; }
     display: flex; align-items: center; justify-content: center;
 }
 .btn-add-type:hover { transform: translateY(-1px); color: #fff; box-shadow: 0 4px 14px rgba(30,64,175,0.4); }
+
+/* ─── HISTORY HEADER ─── */
+.history-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #1d4ed8 100%);
+    border-radius: 16px; padding: 22px 28px; margin-bottom: 20px; margin-top: 1.5rem;
+    box-shadow: 0 8px 32px rgba(37,99,235,0.25);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.history-header h2 { color: #fff; font-weight: 700; margin: 0; font-size: 1.5rem; }
+.history-header p  { color: rgba(255,255,255,0.7); margin: 4px 0 0; font-size: 0.9rem; }
+
+/* ─── TAB DROPDOWN ─── */
+.tab-dropdown-wrap { position: relative; display: inline-block; }
+.tab-dropdown-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: 1px solid rgba(255,255,255,0.35); border-radius: 10px;
+    padding: 9px 16px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s; white-space: nowrap; user-select: none;
+}
+.tab-dropdown-btn:hover { background: rgba(255,255,255,0.25); }
+.tab-dropdown-btn .tab-chevron { transition: transform 0.25s; font-size: 11px; }
+.tab-dropdown-btn.open .tab-chevron { transform: rotate(180deg); }
+.tab-dropdown-menu {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0;
+    background: #1e3a8a; border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; min-width: 190px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 200;
+}
+.tab-dropdown-menu.open { display: block; }
+.tab-dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; font-size: 14px; font-weight: 500;
+    color: rgba(255,255,255,0.85); cursor: pointer; transition: background 0.15s;
+}
+.tab-dropdown-item:hover  { background: rgba(255,255,255,0.1); }
+.tab-dropdown-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 700; }
+.tab-dropdown-item i { width: 16px; text-align: center; }
+
+/* ─── HISTORY PANELS ─── */
+.history-panel { display: none; }
+.history-panel.active { display: block; }
 </style>
 @endpush
 
@@ -263,85 +319,182 @@ nav.d-flex p.small { display: none !important; }
         @endif
     </div>
 
-    {{-- RETURN HISTORY --}}
-    <h5 class="section-title mt-4 mb-4">Return History</h5>
-    <div class="table-card">
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Vehicle</th>
-                        <th>Return Date</th>
-                        <th>Late (days)</th>
-                        <th>Penalty</th>
-                        <th>Condition</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($returns as $return)
-                    <tr>
-                        <td>#{{ $return->booking_id }}</td>
-                        <td>{{ optional($return->booking->vehicle)->name ?? '—' }}</td>
-                        <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d M Y') }}</td>
-                        <td>
-                            @if($return->late_days > 0)
-                                <span class="text-danger fw-bold">{{ $return->late_days }}</span>
-                            @else
-                                <span class="text-success">0</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($return->penalty > 0)
-                                <strong class="text-danger">Rp {{ number_format($return->penalty, 0, ',', '.') }}</strong>
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($return->vehicle_condition == 'Good')
-                                <span class="badge bg-success">Good</span>
-                            @elseif($return->vehicle_condition == 'Minor Damage')
-                                <span class="badge bg-warning text-dark">Minor Damage</span>
-                            @else
-                                <span class="badge bg-danger">Major Damage</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-5 text-muted fst-italic">No return records yet.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    {{-- HISTORY HEADER WITH TAB DROPDOWN --}}
+    <div class="history-header">
+        <div>
+            <h2><i class="fas fa-history me-2"></i> <span id="historyHeaderTitle">Return History</span></h2>
+            <p id="historyHeaderSub">Complete vehicle return records</p>
         </div>
-        @if($returns->total() > 0 && $returns->lastPage() > 1)
-        <div class="p-3 border-top d-flex justify-content-between align-items-center">
-            <span class="text-muted" style="font-size: 14px;">
-                Showing {{ $returns->firstItem() }} to {{ $returns->lastItem() }} of {{ $returns->total() }} results
-            </span>
-            <div class="d-flex gap-1">
-                @if($returns->onFirstPage())
-                    <button class="page-btn" disabled>&lsaquo;</button>
-                @else
-                    <a href="{{ $returns->appends(['page' => request('page')])->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
-                @endif
-                @for($page = 1; $page <= $returns->lastPage(); $page++)
-                    @if($page == $returns->currentPage())
-                        <button class="page-btn active">{{ $page }}</button>
-                    @else
-                        <a href="{{ $returns->appends(['page' => request('page')])->url($page) }}" class="page-btn">{{ $page }}</a>
-                    @endif
-                @endfor
-                @if($returns->hasMorePages())
-                    <a href="{{ $returns->appends(['page' => request('page')])->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
-                @else
-                    <button class="page-btn" disabled>&rsaquo;</button>
-                @endif
+        <div class="tab-dropdown-wrap">
+            <div class="tab-dropdown-btn" id="historyTabBtn">
+                <i class="fas fa-undo-alt" id="historyTabIcon"></i>
+                <span id="historyTabLabel">Return History</span>
+                <i class="fas fa-chevron-down tab-chevron"></i>
+            </div>
+            <div class="tab-dropdown-menu" id="historyTabMenu">
+                <div class="tab-dropdown-item active" data-tab="return"
+                     data-label="Return History" data-icon="fas fa-undo-alt"
+                     data-title="Return History" data-sub="Complete vehicle return records">
+                    <i class="fas fa-undo-alt"></i> Return History
+                </div>
+                <div class="tab-dropdown-item" data-tab="cancel"
+                     data-label="Cancel History" data-icon="fas fa-ban"
+                     data-title="Cancel History" data-sub="Complete booking cancellation records">
+                    <i class="fas fa-ban"></i> Cancel History
+                </div>
             </div>
         </div>
-        @endif
+    </div>
+
+    {{-- RETURN HISTORY PANEL --}}
+    <div class="history-panel active" id="panel-return">
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Vehicle</th>
+                            <th>Return Date</th>
+                            <th>Late (days)</th>
+                            <th>Penalty</th>
+                            <th>Condition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($returns as $return)
+                        <tr>
+                            <td>#{{ $return->booking_id }}</td>
+                            <td>{{ optional($return->booking->vehicle)->name ?? '—' }}</td>
+                            <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d M Y') }}</td>
+                            <td>
+                                @if($return->late_days > 0)
+                                    <span class="text-danger fw-bold">{{ $return->late_days }}</span>
+                                @else
+                                    <span class="text-success">0</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($return->penalty > 0)
+                                    <strong class="text-danger">Rp {{ number_format($return->penalty, 0, ',', '.') }}</strong>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($return->vehicle_condition == 'Good')
+                                    <span class="badge bg-success">Good</span>
+                                @elseif($return->vehicle_condition == 'Minor Damage')
+                                    <span class="badge bg-warning text-dark">Minor Damage</span>
+                                @else
+                                    <span class="badge bg-danger">Major Damage</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted fst-italic">No return records yet.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($returns->total() > 0 && $returns->lastPage() > 1)
+            <div class="p-3 border-top d-flex justify-content-between align-items-center">
+                <span class="text-muted" style="font-size: 14px;">
+                    Showing {{ $returns->firstItem() }} to {{ $returns->lastItem() }} of {{ $returns->total() }} results
+                </span>
+                <div class="d-flex gap-1">
+                    @if($returns->onFirstPage())
+                        <button class="page-btn" disabled>&lsaquo;</button>
+                    @else
+                        <a href="{{ $returns->appends(['page' => request('page')])->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                    @endif
+                    @for($page = 1; $page <= $returns->lastPage(); $page++)
+                        @if($page == $returns->currentPage())
+                            <button class="page-btn active">{{ $page }}</button>
+                        @else
+                            <a href="{{ $returns->appends(['page' => request('page')])->url($page) }}" class="page-btn">{{ $page }}</a>
+                        @endif
+                    @endfor
+                    @if($returns->hasMorePages())
+                        <a href="{{ $returns->appends(['page' => request('page')])->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                    @else
+                        <button class="page-btn" disabled>&rsaquo;</button>
+                    @endif
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- CANCEL HISTORY PANEL --}}
+    <div class="history-panel" id="panel-cancel">
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Customer Name</th>
+                            <th>Vehicle</th>
+                            <th>Plate</th>
+                            <th>Reason</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($cancellations as $i => $c)
+                        <tr>
+                            <td>{{ $cancellations->firstItem() + $i }}</td>
+                            <td class="fw-semibold">{{ $c->customer_name }}</td>
+                            <td>{{ $c->vehicle_name }}</td>
+                            <td><code style="color:#1e40af;">{{ $c->plate_number }}</code></td>
+                            <td style="max-width:220px;white-space:normal;text-align:center;">
+                                <span style="background:#fef2f2;color:#991b1b;padding:3px 10px;border-radius:6px;font-size:13px;">
+                                    {{ $c->reason }}
+                                </span>
+                            </td>
+                            <td>{{ \Carbon\Carbon::parse($c->cancelled_date)->format('d M Y') }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted fst-italic">
+                                <i class="fas fa-ban fa-2x d-block mb-2 opacity-25"></i>
+                                No cancellation records yet.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($cancellations->hasPages())
+            <div class="p-3 border-top d-flex justify-content-between align-items-center">
+                <span class="text-muted" style="font-size:14px;">
+                    Showing {{ $cancellations->firstItem() }} to {{ $cancellations->lastItem() }} of {{ $cancellations->total() }} results
+                </span>
+                <div class="d-flex gap-1">
+                    @if($cancellations->onFirstPage())
+                        <button class="page-btn" disabled>&lsaquo;</button>
+                    @else
+                        <a href="{{ $cancellations->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
+                    @endif
+                    @for($page = 1; $page <= $cancellations->lastPage(); $page++)
+                        @if($page == $cancellations->currentPage())
+                            <button class="page-btn active">{{ $page }}</button>
+                        @else
+                            <a href="{{ $cancellations->url($page) }}" class="page-btn">{{ $page }}</a>
+                        @endif
+                    @endfor
+                    @if($cancellations->hasMorePages())
+                        <a href="{{ $cancellations->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
+                    @else
+                        <button class="page-btn" disabled>&rsaquo;</button>
+                    @endif
+                </div>
+            </div>
+            @endif
+        </div>
     </div>
 
     <form id="deleteVehicleForm" method="POST" style="display:none;">
@@ -406,12 +559,20 @@ nav.d-flex p.small { display: none !important; }
                             <input type="number" name="price_per_day" class="form-control" placeholder="e.g. 85000" value="{{ old('price_per_day') }}" min="0" required>
                         </div>
                     </div>
+                    {{-- BARU --}}
                     <div class="mb-4">
                         <label class="form-label fw-semibold" style="color:#1e3a8a;">Vehicle Photo</label>
                         <input type="file" name="image" class="form-control" accept="image/*" id="addImageInput" required>
                         <small class="text-muted">JPG, JPEG, PNG, WEBP — max 2MB</small>
+
+                        {{-- PREVIEW BOX --}}
+                        <div id="addImagePreviewBox" style="display:none;margin-top:10px;">
+                            <img id="addImagePreview" src=""
+                                style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:2px solid #bfdbfe;">
+                        </div>
+
                         <div class="d-flex align-items-center gap-1 mt-1"
-                             style="font-size:12.5px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 10px;">
+                            style="font-size:12.5px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 10px;">
                             <i class="fas fa-exclamation-triangle" style="font-size:11px;"></i>
                             <span>Make sure the uploaded photo is a <strong>vehicle photo</strong>.</span>
                         </div>
@@ -507,9 +668,7 @@ nav.d-flex p.small { display: none !important; }
                         style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:10px;padding:10px 24px;">
                         <i class="fas fa-trash me-2"></i> Yes, Delete
                     </button>
-                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius:10px;">
-                        Cancel
-                    </button>
+                    
                 </div>
             </div>
         </div>
@@ -525,7 +684,6 @@ nav.d-flex p.small { display: none !important; }
                 <button type="button" class="modal-close-btn" id="btnCancelAddType"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body p-4">
-                {{-- Add new type --}}
                 <label class="form-label fw-semibold" style="color:#1e3a8a;">Add New Type</label>
                 <div class="d-flex gap-2 mb-1">
                     <input type="text" id="newTypeLabelInput" class="form-control"
@@ -536,14 +694,9 @@ nav.d-flex p.small { display: none !important; }
                     </button>
                 </div>
                 <div id="newTypeError" style="color:#dc2626;font-size:13px;display:none;" class="mb-2"></div>
-
                 <hr style="border-color:#e5e7eb;margin:14px 0;">
-
-                {{-- List existing types --}}
                 <label class="form-label fw-semibold mb-2" style="color:#1e3a8a;">Existing Types</label>
                 <div id="typeListPanel" style="max-height:200px;overflow-y:auto;"></div>
-
-                {{-- Back button --}}
                 <button type="button" id="btnCancelAddType2" class="btn btn-outline-secondary fw-semibold w-100 mt-3"
                     style="border-radius:10px;padding:10px;">
                     <i class="fas fa-arrow-left me-2"></i> Back
@@ -593,29 +746,21 @@ nav.d-flex p.small { display: none !important; }
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 const CSRF_TOKEN = '{{ csrf_token() }}';
-let activeFrom = 'add'; // track dari modal mana tombol + ditekan
+let activeFrom = 'add';
 
-/* ─── Helper: tutup addTypeModal, buka kembali modal asal ─── */
 function closeTypeModalAndReturn() {
     const $addTypeModal = bootstrap.Modal.getInstance(document.getElementById('addTypeModal'));
     if ($addTypeModal) $addTypeModal.hide();
-
     setTimeout(function () {
         const targetModalId = activeFrom === 'edit' ? 'editVehicleModal' : 'addVehicleModal';
-        const returnModal = new bootstrap.Modal(document.getElementById(targetModalId));
-        returnModal.show();
+        new bootstrap.Modal(document.getElementById(targetModalId)).show();
     }, 300);
 }
 
-/* ─── Init Select2 biasa (tanpa tombol delete di dropdown) ─── */
 function initTypeSelect2(selector, parentId) {
-    $(selector).select2({
-        placeholder: '— Select Type —',
-        dropdownParent: $(parentId),
-    });
+    $(selector).select2({ placeholder: '— Select Type —', dropdownParent: $(parentId) });
 }
 
-/* ─── Render daftar type di panel manage (di dalam addTypeModal) ─── */
 function renderTypeList(types) {
     var html = '';
     if (!types || types.length === 0) {
@@ -636,43 +781,31 @@ function renderTypeList(types) {
     $('#typeListPanel').html(html);
 }
 
-/* ─── Load type list dari server ─── */
 function loadTypeList() {
     fetch('/vehicle-types/list', { headers: { 'Accept': 'application/json' } })
-    .then(r => r.json())
-    .then(data => renderTypeList(data))
-    .catch(() => {});
+    .then(r => r.json()).then(data => renderTypeList(data)).catch(() => {});
 }
 
-/* ─── Delete type dari panel ─── */
-let pendingDeleteTypeId   = null;
-let pendingDeleteTypeName = null;
-let pendingDeleteTypeCount = 0;
+let pendingDeleteTypeId = null, pendingDeleteTypeName = null, pendingDeleteTypeCount = 0;
 
 $(document).on('click', '.btn-do-delete-type', function () {
     pendingDeleteTypeId    = $(this).data('id');
     pendingDeleteTypeName  = $(this).data('name');
     pendingDeleteTypeCount = parseInt($(this).data('count')) || 0;
-
     $('#confirmTypeName').text('"' + pendingDeleteTypeName + '"');
-
     if (pendingDeleteTypeCount > 0) {
         $('#confirmTypeCount').text(pendingDeleteTypeCount);
         $('#confirmTypeWarning').removeClass('d-none');
     } else {
         $('#confirmTypeWarning').addClass('d-none');
     }
-
-    /* Sembunyikan dulu manage types modal, lalu tampil konfirmasi */
     bootstrap.Modal.getInstance(document.getElementById('addTypeModal'))?.hide();
     setTimeout(function () {
         new bootstrap.Modal(document.getElementById('confirmDeleteTypeModal')).show();
     }, 300);
 });
 
-/* ─── Kalau confirm delete modal ditutup tanpa delete → kembali ke Manage Types ─── */
 document.getElementById('confirmDeleteTypeModal').addEventListener('hide.bs.modal', function () {
-    /* Hanya balik kalau bukan karena tombol Yes Delete diklik */
     if (pendingDeleteTypeId !== null) {
         setTimeout(function () {
             new bootstrap.Modal(document.getElementById('addTypeModal')).show();
@@ -681,12 +814,9 @@ document.getElementById('confirmDeleteTypeModal').addEventListener('hide.bs.moda
 });
 
 $('#btnDoConfirmDeleteType').on('click', function () {
-    var id    = pendingDeleteTypeId;
-    var count = pendingDeleteTypeCount;
-    pendingDeleteTypeId = null; /* tandai bahwa ini genuine delete, bukan cancel */
-
+    var id = pendingDeleteTypeId, count = pendingDeleteTypeCount;
+    pendingDeleteTypeId = null;
     bootstrap.Modal.getInstance(document.getElementById('confirmDeleteTypeModal'))?.hide();
-
     fetch('/vehicle-types/' + id, {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
@@ -703,7 +833,6 @@ $('#btnDoConfirmDeleteType').on('click', function () {
             setTimeout(() => window.location.reload(), 200);
         } else {
             loadTypeList();
-            /* Kembali ke manage types modal */
             setTimeout(function () {
                 new bootstrap.Modal(document.getElementById('addTypeModal')).show();
             }, 300);
@@ -714,17 +843,14 @@ $('#btnDoConfirmDeleteType').on('click', function () {
 
 $(document).ready(function () {
 
-    /* ─── Select2 filter (search bar) ─── */
     $('#typeFilter').select2({
         placeholder: 'All Types', allowClear: true,
         minimumResultsForSearch: 0, dropdownParent: $('body'),
     }).on('change', function () { document.getElementById('filterForm').submit(); });
 
-    /* ─── Select2 Add & Edit modal dengan tombol delete di tiap option ─── */
     initTypeSelect2('#addTypeSelect', '#addVehicleModal');
     initTypeSelect2('#ev-type', '#editVehicleModal');
 
-    /* ─── Track dari modal mana tombol + ditekan, load type list ─── */
     $('[data-bs-target="#addTypeModal"]').on('click', function () {
         activeFrom = $(this).data('from');
         $('#newTypeLabelInput').val('');
@@ -732,63 +858,91 @@ $(document).ready(function () {
         loadTypeList();
     });
 
-    /* ─── Cancel / X di modal Add Type → kembali ke modal asal ─── */
     $('#btnCancelAddType, #btnCancelAddType2').on('click', function () {
         closeTypeModalAndReturn();
     });
 
-    /* ─── Simpan type baru via AJAX ─── */
     $('#btnSaveNewType').on('click', function () {
         const label = $('#newTypeLabelInput').val().trim();
-        if (!label) {
-            $('#newTypeError').text('Type name cannot be empty.').show();
-            return;
-        }
-
+        if (!label) { $('#newTypeError').text('Type name cannot be empty.').show(); return; }
         const $btn = $(this);
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Saving...');
-
         fetch('/vehicle-types', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Accept': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
             body: JSON.stringify({ label: label })
         })
         .then(r => r.json().then(data => ({ ok: r.ok, data })))
         .then(({ ok, data }) => {
-            if (!ok) {
-                $('#newTypeError').text(data.error || 'Failed to save type.').show();
-                return;
-            }
-
-            /* Tambah option ke semua select type */
-            const $newOptAdd  = $('<option>', { value: data.name, text: data.label, 'data-type-id': data.id });
-            const $newOptEdit = $('<option>', { value: data.name, text: data.label, 'data-type-id': data.id });
-            $('#addTypeSelect').append($newOptAdd);
-            $('#ev-type').append($newOptEdit);
-
-            /* Langsung pilih di select yang aktif */
+            if (!ok) { $('#newTypeError').text(data.error || 'Failed to save type.').show(); return; }
+            $('#addTypeSelect').append($('<option>', { value: data.name, text: data.label, 'data-type-id': data.id }));
+            $('#ev-type').append($('<option>', { value: data.name, text: data.label, 'data-type-id': data.id }));
             const targetSelect = activeFrom === 'edit' ? '#ev-type' : '#addTypeSelect';
             $(targetSelect).val(data.name).trigger('change');
-
-            /* Tutup modal add type, kembali ke modal asal */
             closeTypeModalAndReturn();
         })
         .catch(() => $('#newTypeError').text('Network error.').show())
-        .finally(() => {
-            $btn.prop('disabled', false).html('<i class="fas fa-save me-2"></i> Save Type');
-        });
+        .finally(() => { $btn.prop('disabled', false).html('<i class="fas fa-save me-2"></i> Save Type'); });
     });
 
-    /* ─── Enter key di input type ─── */
     $('#newTypeLabelInput').on('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); $('#btnSaveNewType').trigger('click'); }
     });
 
-}); // ← tutup $(document).ready
+    /* ─── History Tab Dropdown ─── */
+    const tabBtn   = document.getElementById('historyTabBtn');
+    const tabMenu  = document.getElementById('historyTabMenu');
+    const tabItems = tabMenu.querySelectorAll('.tab-dropdown-item');
+
+    tabBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        tabBtn.classList.toggle('open');
+        tabMenu.classList.toggle('open');
+    });
+
+    document.addEventListener('click', function () {
+        tabBtn.classList.remove('open');
+        tabMenu.classList.remove('open');
+    });
+
+    tabItems.forEach(function (item) {
+        item.addEventListener('click', function () {
+            tabItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            document.getElementById('historyTabLabel').textContent    = item.dataset.label;
+            document.getElementById('historyTabIcon').className       = item.dataset.icon;
+            document.getElementById('historyHeaderTitle').textContent = item.dataset.title;
+            document.getElementById('historyHeaderSub').textContent   = item.dataset.sub;
+            document.querySelectorAll('.history-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + item.dataset.tab).classList.add('active');
+            tabBtn.classList.remove('open');
+            tabMenu.classList.remove('open');
+        });
+    });
+
+    // ── OTOMATIS BUKA PANEL CANCEL HISTORY SETELAH REDIRECT DARI PEMBATALAN ──
+    @if(request('tab') === 'cancel')
+    document.querySelectorAll('.history-panel').forEach(function(p) {
+        p.classList.remove('active');
+    });
+    document.getElementById('panel-cancel').classList.add('active');
+
+    document.getElementById('historyTabLabel').textContent    = 'Cancel History';
+    document.getElementById('historyTabIcon').className       = 'fas fa-ban';
+    document.getElementById('historyHeaderTitle').textContent = 'Cancel History';
+    document.getElementById('historyHeaderSub').textContent   = 'Complete booking cancellation records';
+
+    document.querySelectorAll('.tab-dropdown-item').forEach(function(i) {
+        i.classList.remove('active');
+    });
+    document.querySelector('.tab-dropdown-item[data-tab="cancel"]').classList.add('active');
+
+    setTimeout(function () {
+        document.getElementById('panel-cancel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+    @endif
+
+});
 
 /* ─── Edit vehicle modal ─── */
 document.getElementById('editVehicleModal').addEventListener('show.bs.modal', function (e) {
@@ -799,21 +953,15 @@ document.getElementById('editVehicleModal').addEventListener('show.bs.modal', fu
     document.getElementById('ev-price').value         = btn.dataset.price;
     document.getElementById('ev-plate-error').style.display = 'none';
     document.getElementById('ev-plate').style.borderColor   = '';
-
-    var typeVal   = btn.dataset.type;
-    var typeLabel = btn.dataset.label;
-    var $evType   = $('#ev-type');
+    var typeVal = btn.dataset.type, typeLabel = btn.dataset.label;
+    var $evType = $('#ev-type');
     if ($evType.find('option[value="' + typeVal + '"]').length === 0) {
         $evType.append(new Option(typeLabel, typeVal, true, true));
-    } else {
-        $evType.val(typeVal);
-    }
+    } else { $evType.val(typeVal); }
     $evType.trigger('change');
-
     const preview = document.getElementById('ev-image-preview');
     preview.innerHTML = btn.dataset.image
-        ? `<img src="${btn.dataset.image}" style="width:100px;border-radius:8px;border:1px solid #e5e7eb;">`
-        : '';
+        ? `<img src="${btn.dataset.image}" style="width:100px;border-radius:8px;border:1px solid #e5e7eb;">` : '';
 });
 
 /* ─── Delete vehicle modal ─── */
@@ -826,12 +974,11 @@ document.getElementById('btn-confirm-delete').addEventListener('click', function
     document.getElementById('deleteVehicleForm').submit();
 });
 
-/* ─── Plate number: auto format saja saat input, tanpa error/merah ─── */
+/* ─── Plate auto format ─── */
 function autoFormatPlate(inputId) {
     document.getElementById(inputId).addEventListener('input', function () {
         let val = this.value.toUpperCase().replace(/\s+/g, '');
-        let formatted = '', i = 0;
-        let part1 = '';
+        let formatted = '', i = 0, part1 = '';
         while (i < val.length && /[A-Z]/.test(val[i]) && part1.length < 3) part1 += val[i++];
         formatted = part1;
         let part2 = '';
@@ -841,7 +988,6 @@ function autoFormatPlate(inputId) {
         while (i < val.length && /[A-Z]/.test(val[i]) && part3.length < 3) part3 += val[i++];
         if (part3) formatted += ' ' + part3;
         this.value = formatted;
-        /* Reset error & border saat user mengetik */
         document.getElementById(inputId === 'addPlateInput' ? 'add-plate-error' : 'ev-plate-error').style.display = 'none';
         this.style.borderColor = '';
     });
@@ -849,35 +995,24 @@ function autoFormatPlate(inputId) {
 autoFormatPlate('ev-plate');
 autoFormatPlate('addPlateInput');
 
-/* ─── Validasi plate saat klik Save Vehicle (Add) ─── */
+/* ─── Plate validation ─── */
 document.querySelector('#addVehicleModal form').addEventListener('submit', function (e) {
     const input = document.getElementById('addPlateInput');
     const errEl = document.getElementById('add-plate-error');
-    const valid = /^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(input.value.trim());
-    if (!valid) {
-        e.preventDefault();
-        errEl.style.display = 'block';
-        input.focus();
-    } else {
-        errEl.style.display = 'none';
-    }
+    if (!/^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(input.value.trim())) {
+        e.preventDefault(); errEl.style.display = 'block'; input.focus();
+    } else { errEl.style.display = 'none'; }
 });
 
-/* ─── Validasi plate saat klik Save Changes (Edit) ─── */
 document.getElementById('editVehicleForm').addEventListener('submit', function (e) {
     const input = document.getElementById('ev-plate');
     const errEl = document.getElementById('ev-plate-error');
-    const valid = /^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(input.value.trim());
-    if (!valid) {
-        e.preventDefault();
-        errEl.style.display = 'block';
-        input.focus();
-    } else {
-        errEl.style.display = 'none';
-    }
+    if (!/^[A-Z]{1,3} \d{1,4} [A-Z]{1,3}$/.test(input.value.trim())) {
+        e.preventDefault(); errEl.style.display = 'block'; input.focus();
+    } else { errEl.style.display = 'none'; }
 });
 
-/* ─── Image preview (edit) ─── */
+/* ─── Image preview ─── */
 document.querySelector('#editVehicleModal input[name="image"]').addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
@@ -890,11 +1025,24 @@ document.querySelector('#editVehicleModal input[name="image"]').addEventListener
     reader.readAsDataURL(file);
 });
 
-/* ─── Image preview (add) ─── */
+// BARU
 document.getElementById('addImageInput').addEventListener('change', function () {
     const file = this.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { alert('Maximum file size is 2MB!'); this.value = ''; return; }
+    const previewBox = document.getElementById('addImagePreviewBox');
+    const preview    = document.getElementById('addImagePreview');
+    if (!file) { previewBox.style.display = 'none'; return; }
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Maximum file size is 2MB!');
+        this.value = '';
+        previewBox.style.display = 'none';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+        preview.src = e.target.result;
+        previewBox.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
 });
 
 @if($errors->any() && old('name'))

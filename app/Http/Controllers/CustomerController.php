@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -64,7 +65,6 @@ class CustomerController extends Controller
         $validated = $this->validateCustomer($request, $id);
 
         if ($request->hasFile('ktp_photo')) {
-            // Hapus foto lama jika ada
             if ($customer->ktp_photo && file_exists(public_path('ktp/' . $customer->ktp_photo))) {
                 unlink(public_path('ktp/' . $customer->ktp_photo));
             }
@@ -87,6 +87,16 @@ class CustomerController extends Controller
     public function destroy($id)
     {
         $customer = Customer::findOrFail($id);
+
+        // Cek apakah customer masih punya booking aktif (belum returned)
+        $activeBooking = Booking::where('customer_id', $id)
+            ->whereDoesntHave('returnVehicle')
+            ->exists();
+
+        if ($activeBooking) {
+            return redirect()->route('customers.index')
+                ->with('error', 'Cannot delete "' . $customer->customer_name . '" because they currently have an active rental.');
+        }
 
         if ($customer->ktp_photo && file_exists(public_path('ktp/' . $customer->ktp_photo))) {
             unlink(public_path('ktp/' . $customer->ktp_photo));

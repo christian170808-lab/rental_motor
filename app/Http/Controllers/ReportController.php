@@ -13,23 +13,111 @@ class ReportController extends Controller
     /*
     |--------------------------------------------------------------------------
     | INDEX
-    | - Show report page with bookings and payments
+    | - Filter by: date range (date_from, date_to), report type (type_filter)
+    |
+    | type_filter values:
+    |   all       → semua data
+    |   completed → payment_status = completed
+    |   dp        → payment_status = paid AND payment_type = dp  (Incomplete/DP)
+    |   full      → payment_status = paid AND payment_type = full (Paid Off)
+    |   cancelled → payment_status = cancelled
     |--------------------------------------------------------------------------
     */
     public function index(Request $request)
     {
-        $bookings          = $this->getBookings($request->get('sort', 'newest'));
-        $payments          = Payment::with(['customer', 'vehicle'])->latest()->get();
-        $totalRevenue      = Payment::where('status', 'completed')->sum('total_price');
-        $totalTransactions = Payment::whereIn('status', ['paid', 'completed'])->count();
+        $sort        = $request->get('sort', 'newest');
+        $dateFrom    = $request->get('date_from');
+        $dateTo      = $request->get('date_to');
+        $typeFilter  = $request->get('type_filter', 'all');
 
-        return view('reports.index', compact('bookings', 'payments', 'totalRevenue', 'totalTransactions'));
+        // ── Bookings query ──
+        $bookingQuery = Booking::with(['customer', 'vehicle', 'returnVehicle']);
+
+        if ($dateFrom) {
+            $bookingQuery->whereDate('start_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $bookingQuery->whereDate('start_date', '<=', $dateTo);
+        }
+
+        // Filter tipe laporan
+        if ($typeFilter === 'completed') {
+            $bookingQuery->where('payment_status', 'completed');
+        } elseif ($typeFilter === 'dp') {
+            $bookingQuery->where('payment_status', 'paid')
+                         ->where('payment_type', 'dp');
+        } elseif ($typeFilter === 'full') {
+            $bookingQuery->where('payment_status', 'paid')
+                         ->where('payment_type', 'full');
+        } elseif ($typeFilter === 'cancelled') {
+            $bookingQuery->where('payment_status', 'cancelled');
+        }
+        // 'all' = tidak ada filter tambahan
+
+        if ($sort === 'oldest' || $sort === 'id_asc') {
+            $bookingQuery->orderBy('id', 'asc');
+        } else {
+            $bookingQuery->latest();
+        }
+
+        $bookings = $bookingQuery->paginate(10)->withQueryString();
+
+        // ── Payments query ──
+        $paymentQuery = Payment::with(['customer', 'vehicle']);
+
+        if ($dateFrom) {
+            $paymentQuery->whereDate('start_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $paymentQuery->whereDate('start_date', '<=', $dateTo);
+        }
+
+        // Payments tidak punya payment_type, filter by status saja
+        if ($typeFilter === 'completed') {
+            $paymentQuery->where('status', 'completed');
+        } elseif ($typeFilter === 'dp' || $typeFilter === 'full') {
+            $paymentQuery->where('status', 'paid');
+        }
+
+        $payments = $paymentQuery->latest()->get();
+
+        // ── Stats (ikut filter periode, exclude cancelled) ──
+        $revenueQuery     = Payment::where('status', 'completed');
+        $transactionQuery = Payment::whereIn('status', ['paid', 'completed']);
+        $totalPaidQuery   = Payment::whereIn('status', ['paid', 'completed']);
+        $totalAllQuery    = Booking::where('payment_status', '!=', 'cancelled');
+
+        if ($dateFrom) {
+            $revenueQuery->whereDate('start_date', '>=', $dateFrom);
+            $transactionQuery->whereDate('start_date', '>=', $dateFrom);
+            $totalPaidQuery->whereDate('start_date', '>=', $dateFrom);
+            $totalAllQuery->whereDate('start_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $revenueQuery->whereDate('start_date', '<=', $dateTo);
+            $transactionQuery->whereDate('start_date', '<=', $dateTo);
+            $totalPaidQuery->whereDate('start_date', '<=', $dateTo);
+            $totalAllQuery->whereDate('start_date', '<=', $dateTo);
+        }
+
+        $totalRevenue      = $revenueQuery->sum('total_price');
+        $totalTransactions = $transactionQuery->count();
+        $totalPaid         = $totalPaidQuery->sum('total_price');
+        $totalAll          = $totalAllQuery->sum('total_cost');
+
+        return view('reports.index', compact(
+            'bookings',
+            'payments',
+            'totalRevenue',
+            'totalTransactions',
+            'totalPaid',
+            'totalAll'
+        ));
     }
 
     /*
     |--------------------------------------------------------------------------
     | DOWNLOAD ALL PDF
-    | - Generate PDF for all bookings with images as base64
     |--------------------------------------------------------------------------
     */
     public function downloadPdf()
@@ -41,79 +129,44 @@ class ReportController extends Controller
     /*
     |--------------------------------------------------------------------------
     | DOWNLOAD SINGLE PDF
-    | - Generate PDF for one booking
     |--------------------------------------------------------------------------
     */
     public function downloadSinglePdf($id)
     {
         $booking  = Booking::with(['customer', 'vehicle', 'returnVehicle'])->findOrFail($id);
         $bookings = $this->prepareImages(collect([$booking]));
-
         return $this->generatePdf($bookings, 'Booking-' . $booking->id . '-' . now()->format('d-m-Y') . '.pdf');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | PRIVATE: GET BOOKINGS
+    | PRIVATE HELPERS
     |--------------------------------------------------------------------------
     */
-    private function getBookings($sort = 'newest')
-    {
-        $query = Booking::with(['customer', 'vehicle', 'returnVehicle']);
-
-        if ($sort === 'oldest' || $sort === 'id_asc') {
-            $query->orderBy('id', 'asc');
-        } else {
-            $query->latest();
-        }
-
-        return $query->paginate(10);
-    }
-
     private function getAllBookings()
     {
         return Booking::with(['customer', 'vehicle', 'returnVehicle'])->latest()->get();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIVATE: PREPARE IMAGES
-    |--------------------------------------------------------------------------
-    */
     private function prepareImages($bookings)
     {
         foreach ($bookings as $booking) {
             $booking->ktpDataUri   = $this->convertToBase64('ktp', $booking->identity_card);
             $booking->proofDataUri = $this->convertToBase64('payments', $booking->payment_proof);
         }
-
         return $bookings;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIVATE: CONVERT IMAGE TO BASE64
-    |--------------------------------------------------------------------------
-    */
     private function convertToBase64($folder, $fileName)
     {
         if (!$fileName) return null;
-
         $path = $folder . '/' . $fileName;
-
         if (!Storage::disk('public')->exists($path)) return null;
-
         $content = Storage::disk('public')->get($path);
         $mime    = Storage::disk('public')->mimeType($path);
-
         return 'data:' . $mime . ';base64,' . base64_encode($content);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIVATE: GENERATE PDF
-    |--------------------------------------------------------------------------
-    */
     private function generatePdf($bookings, $filename)
     {
         $pdf = Pdf::loadView('reports.pdf', compact('bookings'))
@@ -126,7 +179,6 @@ class ReportController extends Controller
                 'defaultMediaType'        => 'print',
                 'isFontSubsettingEnabled' => true,
             ]);
-
         return $pdf->download($filename);
     }
 }

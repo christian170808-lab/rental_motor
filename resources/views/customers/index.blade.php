@@ -2,6 +2,19 @@
 
 @push('styles')
 <style>
+    @keyframes popIn {
+    0%   { opacity: 0; transform: scale(.85) translateY(-20px); }
+    70%  { transform: scale(1.03) translateY(2px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.modal.show .modal-dialog      { animation: popIn .32s cubic-bezier(.34, 1.56, .64, 1) both; }
+.modal.show .modal-header-blue,
+.modal.show .modal-header-red  { animation: slideDown .28s ease both .05s; }
+.modal-content                 { border: none; border-radius: 16px !important; overflow: hidden; }
 .page-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #1d4ed8 100%);
     border-radius: 16px; padding: 22px 28px; margin-bottom: 20px;
@@ -88,6 +101,14 @@
 
 @section('content')
 <div class="container mt-4" style="max-width:1200px;">
+
+    {{-- Flash messages --}}
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show rounded-3 mb-3" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
 
     <div class="page-header">
         <h2><i class="fas fa-users me-2"></i> Customer List</h2>
@@ -354,9 +375,6 @@
                         <button type="submit" class="btn fw-bold text-white px-4"
                             style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:10px;padding:10px 24px;">
                             <i class="fas fa-trash me-2"></i> Yes, Delete
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius:10px;">
-                            Cancel
                         </button>
                     </div>
                 </form>

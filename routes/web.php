@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/vehicles/{id}',      'update')->name('booking.update');
         Route::delete('/vehicles/{id}',   'destroy')->name('booking.destroy');
         Route::post('/return/{id}',       'returnVehicle')->name('booking.return');
+        Route::get('/customer/{id}',      'getCustomer')->name('booking.customer');
     });
 
     // Returns

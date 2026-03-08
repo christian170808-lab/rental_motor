@@ -16,8 +16,6 @@ class BookingController extends Controller
     /*
     |--------------------------------------------------------------------------
     | INDEX
-    | - List all rented vehicles
-    | - Filter by search & type
     |--------------------------------------------------------------------------
     */
     public function index(Request $request)
@@ -48,6 +46,7 @@ class BookingController extends Controller
         $vehicles = $query->orderByRaw("FIELD(status, 'rented', 'available')")
                         ->orderByRaw("FIELD(type, 'scooter', 'sport', 'trail')")
                         ->orderBy('price_per_day', 'asc')
+                        ->latest()  
                         ->paginate(10)
                         ->withQueryString();
 
@@ -79,15 +78,18 @@ class BookingController extends Controller
             } else {
                 $q->where('payment_status', 'paid')->whereIn('payment_type', ['dp', 'full']);
             }
-        })->paginate(10);
+        })
+        ->withMax('bookings', 'id')
+        ->orderByDesc('bookings_max_id')
+        ->paginate(10);
+        $vehicleTypes = \App\Models\VehicleType::orderBy('label')->get();
 
-        return view('booking.index', compact('vehicles', 'customers', 'rentedVehicles'));
+        return view('booking.index', compact('vehicles', 'customers', 'rentedVehicles', 'vehicleTypes'));
     }
 
     /*
     |--------------------------------------------------------------------------
     | CREATE
-    | - Show booking form for a specific vehicle
     |--------------------------------------------------------------------------
     */
     public function create($vehicle_id)
@@ -105,19 +107,19 @@ class BookingController extends Controller
     /*
     |--------------------------------------------------------------------------
     | STORE
-    | - Validate, upload files, calculate cost, create booking & payment
     |--------------------------------------------------------------------------
     */
     public function store(Request $request)
     {
         $request->validate([
-            'vehicle_id'    => ['required', 'exists:vehicles,id'],
-            'customer_id'   => ['required', 'exists:customers,id'],
-            'identity_card' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'payment_proof' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'start_date'    => ['required', 'date'],
-            'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
-            'payment_type'  => ['required', 'in:dp,full'],
+            'vehicle_id'           => ['required', 'exists:vehicles,id'],
+            'customer_id'          => ['required', 'exists:customers,id'],
+            'identity_card'        => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'identity_card_base64' => ['nullable', 'string'],
+            'payment_proof'        => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'start_date'           => ['required', 'date'],
+            'end_date'             => ['required', 'date', 'after_or_equal:start_date'],
+            'payment_type'         => ['required', 'in:dp,full'],
         ]);
 
         $vehicle     = Vehicle::findOrFail($request->vehicle_id);
@@ -132,6 +134,17 @@ class BookingController extends Controller
             $file    = $request->file('identity_card');
             $ktpName = time() . '_ktp_' . $file->getClientOriginalName();
             $file->storeAs('ktp', $ktpName, 'public');
+        } elseif ($request->filled('identity_card_base64')) {
+            $base64Data = $request->identity_card_base64;
+            $imageData  = preg_replace('#^data:image/\w+;base64,#i', '', $base64Data);
+            $decoded    = base64_decode($imageData);
+            $ktpName    = time() . '_ktp_auto_' . $customerId . '.jpg';
+            Storage::disk('public')->put('ktp/' . $ktpName, $decoded);
+        }
+
+        if (!$ktpName) {
+            $customer = Customer::findOrFail($customerId);
+            $ktpName  = $customer->ktp_photo;
         }
 
         // Upload payment proof
@@ -183,7 +196,6 @@ class BookingController extends Controller
     /*
     |--------------------------------------------------------------------------
     | SHOW
-    | - Display booking detail with KTP & payment proof images
     |--------------------------------------------------------------------------
     */
     public function show($id)
@@ -191,12 +203,10 @@ class BookingController extends Controller
         $booking = Booking::with(['vehicle', 'customer', 'returnVehicle'])->findOrFail($id);
 
         if ($booking->payment_status !== 'paid') {
-            $booking->update([
-    'payment_type' => 'full',
-]);
+            $booking->update(['payment_type' => 'full']);
         }
 
-        $ktpDataUri = $this->getImageDataUri('ktp', $booking->identity_card);
+        $ktpDataUri   = $this->getImageDataUri('ktp', $booking->identity_card);
         $proofDataUri = $this->getImageDataUri('payments', $booking->payment_proof);
 
         return view('booking.show', compact('booking', 'ktpDataUri', 'proofDataUri'));
@@ -204,9 +214,24 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | GET CUSTOMER (AJAX)
+    |--------------------------------------------------------------------------
+    */
+    public function getCustomer($id)
+    {
+        $customer = Customer::findOrFail($id);
+        return response()->json([
+            'customer_name' => $customer->customer_name,
+            'phone_number'  => $customer->phone_number,
+            'address'       => $customer->address,
+            'email'         => $customer->email,
+            'ktp_photo'     => $customer->ktp_photo,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | UPDATE
-    | - Update booking dates and customer contact info
-    | - Recalculate total cost based on new dates
     |--------------------------------------------------------------------------
     */
     public function update(Request $request, $id)
@@ -243,7 +268,6 @@ class BookingController extends Controller
     /*
     |--------------------------------------------------------------------------
     | EDIT
-    | - Load edit form for a vehicle
     |--------------------------------------------------------------------------
     */
     public function edit($id)
@@ -254,8 +278,7 @@ class BookingController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | RETURN VEHICLE (via Pelunasan flow)
-    | - Mark booking as completed, set vehicle back to available
+    | RETURN VEHICLE
     |--------------------------------------------------------------------------
     */
     public function returnVehicle($id)
@@ -263,10 +286,8 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
 
         DB::transaction(function () use ($booking) {
-    $booking->update([
-        'payment_type' => 'full',
-    ]);
-});
+            $booking->update(['payment_type' => 'full']);
+        });
 
         return redirect()->route('booking.index')->with('success', 'Vehicle returned successfully!');
     }
@@ -274,34 +295,41 @@ class BookingController extends Controller
     /*
     |--------------------------------------------------------------------------
     | DESTROY
-    | - Delete vehicle along with related bookings and returns
     |--------------------------------------------------------------------------
     */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $booking = Booking::with(['vehicle', 'customer'])->findOrFail($id);
+        $vehicle = $booking->vehicle;
 
-        $bookingIds = DB::table('bookings')
-            ->where('vehicle_id', $id)
-            ->pluck('id')
-            ->toArray();
+        // Simpan ke cancel history
+        \App\Models\Cancellation::create([
+            'customer_name'  => $booking->customer->customer_name ?? '—',
+            'vehicle_name'   => $vehicle->name ?? '—',
+            'plate_number'   => $vehicle->plate_number ?? '—',
+            'reason'         => $request->input('cancel_reason', '—'),
+            'cancelled_date' => now()->toDateString(),
+        ]);
 
-        if (!empty($bookingIds)) {
-            DB::table('returns')->whereIn('booking_id', $bookingIds)->delete();
-            DB::table('payments')->whereIn('booking_id', $bookingIds)->delete();
-            DB::table('bookings')->where('vehicle_id', $id)->delete();
+        // Update status booking jadi cancelled (tidak dihapus agar muncul di report)
+        $booking->update(['payment_status' => 'cancelled']);
+
+        // Kembalikan status kendaraan ke available
+        if ($vehicle) {
+            $vehicle->update(['status' => 'available']);
         }
 
-        DB::table('vehicles')->where('id', $id)->delete();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        if ($request->input('redirect_to') === 'cancel_history') {
+            return redirect()->route('vehicles.index', ['tab' => 'cancel'])
+                            ->with('success', 'Rental cancelled successfully.');
+        }
 
-        return redirect()->route('booking.index')->with('success', 'Vehicle deleted successfully!');
+        return redirect()->route('booking.index')->with('success', 'Rental cancelled successfully.');
     }
 
     /*
     |--------------------------------------------------------------------------
     | VEHICLES JSON
-    | - AJAX endpoint for vehicle list in Add Rent modal
     |--------------------------------------------------------------------------
     */
     public function vehiclesJson(Request $request)
@@ -325,9 +353,7 @@ class BookingController extends Controller
             $query->where('status', 'rented');
         }
 
-        $vehicles = $query->orderByRaw("FIELD(type, 'scooter', 'sport', 'trail')")
-                  ->orderBy('name', 'asc')
-                  ->paginate(7);
+        $vehicles = $query->orderBy('name', 'asc')->paginate(7);
 
         return response()->json([
             'data'         => $vehicles->items(),
@@ -341,7 +367,6 @@ class BookingController extends Controller
     /*
     |--------------------------------------------------------------------------
     | PRIVATE HELPER
-    | - Convert stored image to base64 data URI
     |--------------------------------------------------------------------------
     */
     private function getImageDataUri($folder, $fileName)

@@ -41,7 +41,9 @@ class VehicleController extends Controller
         });
         $returns      = ReturnVehicle::with('booking.vehicle')->latest()->paginate(5, ['*'], 'page_returns');
 
-        return view('vehicles.index', compact('vehicles', 'vehicleTypes', 'returns'));
+        $cancellations = \App\Models\Cancellation::latest()->paginate(10, ['*'], 'page_cancel');
+
+return view('vehicles.index', compact('vehicles','returns','vehicleTypes','cancellations'));
     }
 
     /*
